@@ -1,0 +1,25 @@
+from datetime import datetime
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Integer, ForeignKey, DateTime
+from .base import Base
+
+class PlanExercise(Base):
+    __tablename__ = "plan_exercises"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    order_index: Mapped[int] = mapped_column(nullable=False)
+    targeted_weight: Mapped[float | None] = mapped_column(nullable=True)
+    min_targeted_reps: Mapped[int | None] = mapped_column(nullable=True)
+    max_targeted_reps: Mapped[int | None] = mapped_column(nullable=True)
+    min_targeted_duration_time: Mapped[float | None] = mapped_column(nullable=True)
+    max_targeted_duration_time: Mapped[float | None] = mapped_column(nullable=True)
+    break_time: Mapped[float | None] = mapped_column(nullable=True)
+
+    training_plan_id: Mapped[int] = mapped_column(
+        ForeignKey("training_plans.id"),
+        nullable=False
+    )
+
+    training_plan = relationship("TrainingPlan", back_populates="plan_exercises")
+
+
