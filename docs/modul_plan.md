@@ -35,3 +35,63 @@ reorder_plan_exercises(training_plan_id: int, plan_exercise_id: int, new_positio
 #Gibt alle Trainingspläne zurück, dessen name den Suchstring enthält
 find_training_plans_by_name(search: str) -> list[TrainingPlan]
 
+
+
+application.workout
+
+- Stellt Funktionen zum Erstellen, Bearbeiten und Löschen von Workouts bereit
+- Benötigt:  TrainingPlanReposotory und WorkoutRepository mit folgenden Operationen(create, get_by_id, find_by_date, get_all, update, delete, find_by_name, find_by_training_plan_id)
+
+#Erstellt ein Workout und referenziert es falls gewollt zu einem Trainingsplan
+create_workout(name: str, training_plan_id: int | None, started_at: datetime | None) -> Workout
+
+#Erstellt ein WorkoutExerciseInput
+create_workout_exercise_input(name: str, working_sets: list[WorkingSetInput] | None) -> WorkoutExerciseInput
+
+#Erstellt ein WorkingSetInput
+create_working_set_input(weight: float | None, reps: int | None, duration_time: float | None) -> WorkingSetInput
+
+#Ruft ein Workout ab
+get_workout(workout_id: int) -> Workout
+
+#Liefert alle Workouts
+get_workouts() -> list[Workout]
+
+#Liefert alle Workouts, die zu einem bestimmten Trainingsplan gehören
+get_workouts_by_training_plan(training_plan_id: int) -> list[Workout]
+
+#Liefert alle Workouts, die einen bestimmten Suchstring enthalten
+get_workouts_by_name(search: str) -> list[Workout]
+
+#Liefert alle Workouts, die nach einem bestimmten Datum gestartet wurden
+get_workouts_by_date(date_ref : Date) -> list[Workout]
+
+#Löscht ein Workout. Gibt alle verbliebenden Workouts zurück.
+remove_workout(workout_id: int) -> bool
+
+#Löscht alle Workouts nach, die vor einem Datum durchgeführt wurden. Gibt alle verbliebenden Workouts zurück.
+remove_workouts_by_date(date_ref: Date) -> bool
+
+#Fügt eine WorkoutExercise zu einem Workout hinzu
+add_workout_exercise(workout_id: int, workout_exercise: WorkoutExerciseInput) -> Workout
+
+#Verändert eine WorkoutExercise in einem Workout
+update_workout_exercise(workout_id, workout_exercise_id, workout_exercise: WorkoutExerciseInput) -> Workout
+
+#Löscht eine WorkoutExercise aus einem Workout
+remove_workout_exercise(workout_id, workout_exercise_id) -> Workout
+
+#Fügt einer WorkoutExercise in einem Workout einen Satz hinzu
+add_workout_set(workout_id, workout_exercise_id, working_set: WorkingSetInput) -> Workout
+
+#Verändert einen Satz in einer WorkoutExercise in einem Workout
+update_workout_set(workout_id, workout_exercise_id, working_set_id: int, working_set: WorkingSetInput) -> Workout
+
+#Löscht einen Satz aus einer WorkoutExercise in einem Workout
+remove_workout_set(workout_id, workout_exercise_id, working_set_id: int) -> Workout
+
+#Speichert ein Workout als Trainingsplan
+save_as_training_plan(workout_id: int) -> TrainingPlan
+
+#Schließt ein laufendes Workout ab
+end_workout(workout_id: int)
