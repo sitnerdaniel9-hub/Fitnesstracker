@@ -157,5 +157,3 @@ get_avg_rep_increase(exercise_name: str, weight: float) -> float | None
 #Liefert die Durchschnittliche Zeitsteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Zeit in einem Workout berücksichtigt.
 
 get_avg_time_increase(exercise_name: str, weight: float) -> float | None
-
-
