@@ -9,6 +9,7 @@ from models.workout_exercise import WorkoutExercise
 from models.workout_set import WorkoutSet
 
 engine = create_engine("sqlite:///fitness_tracker.db", echo=True)
+Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 
 Session = sessionmaker(bind=engine)
@@ -92,4 +93,4 @@ for w in workouts:
     for ex in w.workout_exercises:
         print(f"  Exercise: {ex.name}")
         for s in ex.sets:
-            print(f"    Set -> weight={s.weight}, reps={s.reps}, duration={s.duration_time}")
+            print(f"    Set -> weight={s.weight}, reps={s.reps}, duration={s.duration_time}, warmup={s.isWarmup}")

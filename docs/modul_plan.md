@@ -2,37 +2,50 @@ application.training_plan
 
 - Stellt Funktionen zum Erstellen, Bearbeiten und Löschen von Trainingsplänen bereit.
 - Benötigt: TrainingPlanReposotory mit folgenden Operationen(create, get_by_id, get_all, update, insert, delete, find_by_name)
+
 #Erstellt einen Trainingsplan und gibt eine TrainingPlanEntity zurück. Reihenfolge entsteht aus der Listenreihenfolge
+
 create_training_plan(name, plan_exercises: list[PlanExerciseInput]) -> TrainingPlan
 
 #Erstellt einen PlanExerciseInput und gibt PlanExerciseInput zurück
 create_plan_exercise_input(name, target_weight: float | None, min_target_reps: int | None, max_target_reps: int | None, min_duration_time: float | None, max_duration_time: float | None, rest_sec: float | None) -> PlanExerciseInput
 
 #Fügt einen PlanExerciseInput am Ende eines Trainingsplans ein.
+
 add_plan_exercise(training_plan_id: int, exercise: PlanExerciseInput) -> TrainingPlan
 
 #Löscht eine PlanExercise aus einem Trainingsplan
+
 remove_plan_exercise(training_plan_id: int, plan_exercise_id: int) -> TrainingPlan
 
 #Liefert den gewählten Trainingsplan
+
 get_training_plan_by_id(training_plan_id: int) -> TrainingPlan
 
+
 #Liefert alle Trainingspläne
+
 get_all_training_plans() -> list[TrainingPlan]
 
+
 #Ändert eine Übung im Trainingsplan
+
 update_plan_exercise(training_plan_id: int, plan_exercise_id: int, plan_exercise: PlanExerciseInput) -> TrainingPlan
 
 #Ändert den Namen eines Trainingsplans
+
 rename_training_plan(training_plan_id: int, new_name: str) -> TrainingPlan
 
 #Ändert den Status des TrainingsPlans
+
 toggle_training_plan_status(training_plan_id : int) -> TrainingPlan
 
 #Setzt eine Übung im TrainingsPlan auf eine andere Position
+
 reorder_plan_exercises(training_plan_id: int, plan_exercise_id: int, new_position: int) -> TrainingPlan
 
 #Gibt alle Trainingspläne zurück, dessen name den Suchstring enthält
+
 find_training_plans_by_name(search: str) -> list[TrainingPlan]
 
 
@@ -43,55 +56,106 @@ application.workout
 - Benötigt:  TrainingPlanReposotory und WorkoutRepository mit folgenden Operationen(create, get_by_id, find_by_date, get_all, update, delete, find_by_name, find_by_training_plan_id)
 
 #Erstellt ein Workout und referenziert es falls gewollt zu einem Trainingsplan
+
 create_workout(name: str, training_plan_id: int | None, started_at: datetime | None) -> Workout
 
 #Erstellt ein WorkoutExerciseInput
+
 create_workout_exercise_input(name: str, working_sets: list[WorkingSetInput] | None) -> WorkoutExerciseInput
 
 #Erstellt ein WorkingSetInput
-create_working_set_input(weight: float | None, reps: int | None, duration_time: float | None) -> WorkingSetInput
+
+create_working_set_input(weight: float | None, reps: int | None, duration_time: float | None, isWarmup: bool = False) -> WorkingSetInput
 
 #Ruft ein Workout ab
+
 get_workout(workout_id: int) -> Workout
 
 #Liefert alle Workouts
+
 get_workouts() -> list[Workout]
 
 #Liefert alle Workouts, die zu einem bestimmten Trainingsplan gehören
+
 get_workouts_by_training_plan(training_plan_id: int) -> list[Workout]
 
 #Liefert alle Workouts, die einen bestimmten Suchstring enthalten
+
 get_workouts_by_name(search: str) -> list[Workout]
 
-#Liefert alle Workouts, die nach einem bestimmten Datum gestartet wurden
-get_workouts_by_date(date_ref : Date) -> list[Workout]
+#Liefert alle Workouts, die nach einem bestimmten Zeitraum gestartet wurden
 
-#Löscht ein Workout. Gibt alle verbliebenden Workouts zurück.
+get_workouts_by_date(start : date, end: date) -> list[Workout]
+
+#Löscht ein Workout.
+
 remove_workout(workout_id: int) -> bool
 
-#Löscht alle Workouts nach, die vor einem Datum durchgeführt wurden. Gibt alle verbliebenden Workouts zurück.
+#Löscht alle Workouts nach, die in einem bestimmten Zeitraum durchgeführt wurden.
+
 remove_workouts_by_date(date_ref: Date) -> bool
 
 #Fügt eine WorkoutExercise zu einem Workout hinzu
+
 add_workout_exercise(workout_id: int, workout_exercise: WorkoutExerciseInput) -> Workout
 
 #Verändert eine WorkoutExercise in einem Workout
+
 update_workout_exercise(workout_id, workout_exercise_id, workout_exercise: WorkoutExerciseInput) -> Workout
 
 #Löscht eine WorkoutExercise aus einem Workout
+
 remove_workout_exercise(workout_id, workout_exercise_id) -> Workout
 
 #Fügt einer WorkoutExercise in einem Workout einen Satz hinzu
+
 add_workout_set(workout_id, workout_exercise_id, working_set: WorkingSetInput) -> Workout
 
 #Verändert einen Satz in einer WorkoutExercise in einem Workout
+
 update_workout_set(workout_id, workout_exercise_id, working_set_id: int, working_set: WorkingSetInput) -> Workout
 
 #Löscht einen Satz aus einer WorkoutExercise in einem Workout
+
 remove_workout_set(workout_id, workout_exercise_id, working_set_id: int) -> Workout
 
 #Speichert ein Workout als Trainingsplan
+
 save_as_training_plan(workout_id: int) -> TrainingPlan
 
 #Schließt ein laufendes Workout ab
+
 end_workout(workout_id: int)
+
+application.analysis
+
+- Stellt Funktionen zum Analysieren von Workouts und Trainingsplänen bereit
+- benötigt Workoutrepo und Trainingsplanrepo
+
+#Liefert die Anzahl an Workouts in einem bestimmten Zeitraum
+
+count_workouts_in_date_range(start: date, end: date) -> int
+
+#Liefert die durchschnittliche Anzahl an workouts pro Woche in einem gewünschten Zeitraum. Falls kein Zeitraum angegeben Gesamthistorie.
+
+count_avg_workouts_per_week(start: date | None = None, end: date | None = None) -> float
+
+#Liefert die Personal Best für eine Übung.
+#Bei Wiederholungsübungen: Das Set mit dem höchsten gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Wiederholungsanzahl.
+#Bei Zeitübungen: Das Set mit dem höchsten Gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Zeit.
+
+get_pr_for_exercise(exercise_name: str) -> WorkingSet | None
+
+#Liefert die Durschnittliche Gewichtssteigerung für eine Übung in einem Zeitraum. Nur Arbeitssätze werden berücksichtigt. Es wird immer das maximale Gewicht in einem Workout berücksichtigt.
+
+get_avg_weight_gain(exercise_name: str, start: date | None = None, end: date | None = None) -> float | None
+
+#Liefert die Durchschnittliche Wiederholungssteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Wiedeholungsanzahl in einem Workout berücksichtigt.
+
+get_avg_rep_increase(exercise_name: str, weight: float) -> float | None
+
+#Liefert die Durchschnittliche Zeitsteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Zeit in einem Workout berücksichtigt.
+
+get_avg_time_increase(exercise_name: str, weight: float) -> float | None
+
+

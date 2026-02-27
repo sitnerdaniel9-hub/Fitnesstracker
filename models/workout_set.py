@@ -9,6 +9,7 @@ class WorkoutSet(Base):
     weight: Mapped[float | None] = mapped_column(nullable=True)
     reps: Mapped[int | None] = mapped_column(nullable=True)
     duration_time: Mapped[float | None] = mapped_column(nullable=True)
+    isWarmup: Mapped[bool] = mapped_column(nullable=False, default=False)
     workout_exercise_id: Mapped[int] = mapped_column(
         ForeignKey("workout_exercises.id"),
         nullable=False
