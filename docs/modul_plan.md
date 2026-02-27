@@ -53,7 +53,7 @@ find_training_plans_by_name(search: str) -> list[TrainingPlan]
 application.workout
 
 - Stellt Funktionen zum Erstellen, Bearbeiten und Löschen von Workouts bereit
-- Benötigt:  TrainingPlanReposotory und WorkoutRepository mit folgenden Operationen(create, get_by_id, find_by_date, get_all, update, delete, find_by_name, find_by_training_plan_id)
+- Benötigt:  TrainingPlanReposotory und WorkoutRepository mit folgenden Operationen(create, find_by_id, find_by_date, get_all, update, delete, find_by_name, find_by_training_plan_id)
 
 #Erstellt ein Workout und referenziert es falls gewollt zu einem Trainingsplan
 

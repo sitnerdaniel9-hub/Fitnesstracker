@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .workout_set import WorkoutSet
     from .plan_exercise import PlanExercise
+    from .workout import Workout
 
 class WorkoutExercise(Base):
     __tablename__ = "workout_exercises"

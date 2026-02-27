@@ -4,24 +4,23 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from models.training_plan import TrainingPlan
 
-class TrainingPlanReposotory:
+class TrainingPlanRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, training_plan: TrainingPlan):
+    def create(self, training_plan: TrainingPlan) -> TrainingPlan:
         self.session.add(training_plan)
-        self.session.refresh(training_plan)
         return training_plan
     
-    def get_by_id(self, training_plan_id: int) -> TrainingPlan | None:
+    def find_by_id(self, training_plan_id: int) -> TrainingPlan | None:
         return self.session.get(TrainingPlan, training_plan_id)
     
-    def get_all(self) -> list[TrainingPlan]:
+    def find_all(self) -> list[TrainingPlan]:
         return self.session.scalars(select(TrainingPlan).order_by(TrainingPlan.id)).all()
     
     def find_by_name(self, search: str) -> list[TrainingPlan]:
         stmt = select(TrainingPlan).where(
-            TrainingPlan.name.like(f"%{search.lower()}%")
+            TrainingPlan.name.ilike(f"%{search}%")
         ).order_by(TrainingPlan.id)
         return self.session.scalars(stmt).all()
     
