@@ -83,7 +83,7 @@ get_workouts_by_training_plan(training_plan_id: int) -> list[Workout]
 
 get_workouts_by_name(search: str) -> list[Workout]
 
-#Liefert alle Workouts, die nach einem bestimmten Zeitraum gestartet wurden
+#Liefert alle Workouts, die in einem bestimmten Zeitraum gestartet wurden
 
 get_workouts_by_date(start : date, end: date) -> list[Workout]
 
