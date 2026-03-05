@@ -140,11 +140,11 @@ count_workouts_in_date_range(start: date, end: date) -> int
 
 count_avg_workouts_per_week(start: date | None = None, end: date | None = None) -> float
 
-#Liefert die Personal Best für eine Übung.
+#Liefert die Personal Best für eine Planübung.
 #Bei Wiederholungsübungen: Das Set mit dem höchsten gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Wiederholungsanzahl.
 #Bei Zeitübungen: Das Set mit dem höchsten Gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Zeit.
 
-get_pr_for_exercise(exercise_name: str) -> WorkingSet | None
+get_pr_for_exercise(plan_exercise_id: int) -> WorkingSet | None
 
 #Liefert die Durschnittliche Gewichtssteigerung für eine Übung in einem Zeitraum. Nur Arbeitssätze werden berücksichtigt. Es wird immer das maximale Gewicht in einem Workout berücksichtigt.
 
@@ -152,8 +152,8 @@ get_avg_weight_gain(exercise_name: str, start: date | None = None, end: date | N
 
 #Liefert die Durchschnittliche Wiederholungssteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Wiedeholungsanzahl in einem Workout berücksichtigt.
 
-get_avg_rep_increase(exercise_name: str, weight: float) -> float | None
+get_avg_rep_increase(exercise_name: str, weight: float | None) -> float | None
 
 #Liefert die Durchschnittliche Zeitsteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Zeit in einem Workout berücksichtigt.
 
-get_avg_time_increase(exercise_name: str, weight: float) -> float | None
+get_avg_time_increase(exercise_name: str, weight: float| None) -> float | None

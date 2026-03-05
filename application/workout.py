@@ -275,7 +275,7 @@ def end_workout(session: Session, workout_id: int) -> Workout:
         session.rollback()
         raise
 
-#Erstellt aus einer Liste von WorkoutExercises eine liste von planexercises
+#Erstellt aus einer Liste von WorkoutExercises eine liste von PlanExerciseInputs
 def convert_workout_exercises_into_plan_exercises(workout_exercises: list[WorkoutExercise]) -> list[PlanExerciseInput]:
     plan_exercises : list[PlanExerciseInput] = []
     
