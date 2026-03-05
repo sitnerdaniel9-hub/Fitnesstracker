@@ -30,6 +30,7 @@ class Workout(Base):
     workout_exercises: Mapped[list[WorkoutExercise]] = relationship(
         "WorkoutExercise",
         back_populates="workout",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="WorkoutExercise.order_index",
     )
     

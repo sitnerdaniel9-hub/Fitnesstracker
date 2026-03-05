@@ -144,7 +144,7 @@ def toggle_training_plan_status(session: Session, training_plan_id : int) -> Tra
         training_plan = repo.find_by_id(training_plan_id)
         if training_plan is None:
             raise ValueError(f"training plan with id {training_plan_id} not found")
-        training_plan.status = not training_plan.status
+        training_plan.active = not training_plan.active
         session.commit()
         return training_plan
     except Exception:

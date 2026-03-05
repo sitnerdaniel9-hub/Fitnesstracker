@@ -30,5 +30,6 @@ class TrainingPlan(Base):
     plan_exercises: Mapped[list[PlanExercise]] = relationship(
         "PlanExercise",
         back_populates="training_plan",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="PlanExercise.order_index",
     )
