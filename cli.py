@@ -1,7 +1,6 @@
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-# analysis
 from application.analysis import (
     count_workouts_in_date_range,
     count_avg_workouts_per_week,
@@ -11,7 +10,6 @@ from application.analysis import (
     get_avg_time_increase,
 )
 
-# training plan
 from application.training_plan import (
     create_training_plan,
     get_all_training_plans,
@@ -22,7 +20,6 @@ from application.training_plan import (
     reorder_plan_exercise,
 )
 
-# workout
 from application.workout import (
     create_workout,
     get_workouts,
@@ -36,26 +33,20 @@ from application.workout import (
     save_as_training_plan,
 )
 
-# inputs
 from application.inputs.plan_exercise_input import PlanExerciseInput
 from application.inputs.workout_set_input import WorkoutSetInput
 from application.inputs.workout_exercise_input import WorkoutExerciseInput
 
 
-# ------------------------
 # State
-# ------------------------
-
 class AppState:
     def __init__(self):
         self.current_workout_id: int | None = None
         self.current_plan_id: int | None = None
 
 
-# ------------------------
-# Helper
-# ------------------------
 
+# Helper
 def parse_datetime(text: str) -> datetime | None:
     if not text.strip():
         return None
@@ -91,10 +82,7 @@ def select_from_list(items, label_fn):
     return items[idx - 1]
 
 
-# ------------------------
 # Anzeige Funktionen
-# ------------------------
-
 def print_training_plan_detail(plan):
     print(f"\n=== Trainingsplan: {plan.name} (id={plan.id}, active={plan.active}) ===")
 
@@ -138,10 +126,8 @@ def print_workout_detail(workout):
             print(f"   Set {i} [id={s.id}]: {detail}{warmup}")
 
 
-# ------------------------
-# Auswahl
-# ------------------------
 
+# Auswahl
 def select_workout(session: Session):
     workouts = get_workouts(session)
     return select_from_list(workouts, lambda w: f"{w.id} - {w.name}")
@@ -152,10 +138,7 @@ def select_training_plan(session: Session):
     return select_from_list(plans, lambda p: f"{p.id} - {p.name} (active={p.active})")
 
 
-# ------------------------
 # Workout Menü
-# ------------------------
-
 def workout_menu(session: Session, state: AppState):
     while True:
         print("\n=== Workout Menü ===")
@@ -261,10 +244,7 @@ def workout_menu(session: Session, state: AppState):
             print(f"Fehler: {e}")
 
 
-# ------------------------
 # Trainingsplan Menü
-# ------------------------
-
 def training_plan_menu(session: Session, state: AppState):
     while True:
         print("\n=== Trainingsplan Menü ===")
@@ -342,10 +322,8 @@ def training_plan_menu(session: Session, state: AppState):
             print(f"Fehler: {e}")
 
 
-# ------------------------
-# Analyse Menü
-# ------------------------
 
+# Analyse Menü
 def analysis_menu(session: Session):
     while True:
         print("\n=== Analyse ===")
@@ -397,10 +375,8 @@ def analysis_menu(session: Session):
             print(f"Fehler: {e}")
 
 
-# ------------------------
-# Main Menü
-# ------------------------
 
+# Main Menü
 def run_cli(session: Session):
     state = AppState()
 
