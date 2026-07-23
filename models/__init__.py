@@ -3,3 +3,4 @@ from .plan_exercise import PlanExercise
 from .workout import Workout
 from .workout_exercise import WorkoutExercise
 from .workout_set import WorkoutSet
+from .exercise import Exercise

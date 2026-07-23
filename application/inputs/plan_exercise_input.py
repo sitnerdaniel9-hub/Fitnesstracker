@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class PlanExerciseInput:
-    name: str
+    exercise_id: int
     targeted_weight: float | None
     min_targeted_reps: int | None
     max_targeted_reps: int | None
@@ -10,10 +10,10 @@ class PlanExerciseInput:
     max_duration_time: float | None
     rest_sec: float | None
 
-    def _validate_name(self) -> None:
-        if not self.name or not self.name.strip():
-            raise ValueError("name must not be empty")
-        
+    def _validate_exercise_id(self) -> None:
+        if not self.exercise_id:
+            raise ValueError("exercise_id must not be empty")
+
     def _validate_non_negative_values(self) -> None:
         if self.rest_sec is not None and self.rest_sec < 0:
             raise ValueError("rest_sec must be greater than or equal to 0")
@@ -74,7 +74,7 @@ class PlanExerciseInput:
 
 
     def __post_init__(self) -> None:
-        self._validate_name()
+        self._validate_exercise_id()
         self._validate_non_negative_values()
         self._validate_rep_or_duration_rule()
 

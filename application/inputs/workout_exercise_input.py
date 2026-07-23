@@ -4,13 +4,13 @@ from application.inputs.plan_exercise_input import PlanExerciseInput
 
 @dataclass(frozen=True)
 class WorkoutExerciseInput:
-    name: str
+    exercise_id: int
     plan_exercise_id: int | None
     sets: list[WorkoutSetInput]
 
     def __post_init__(self):
-        if not self.name or not self.name.strip():
-            raise ValueError("name must not be empty")
+        if not self.exercise_id:
+            raise ValueError("exercise_id must not be empty")
         if self.sets is None:
             raise ValueError("sets must not be None")
 

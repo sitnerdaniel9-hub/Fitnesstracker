@@ -56,10 +56,6 @@ def find_set_for_workout_exercise_by_id(workout_exercise: WorkoutExercise, worko
             return w_set
     return None
 
-def normalize_workout_exercise_order(workout: Workout) -> None:
-    for index, workout_exercise in enumerate(workout.workout_exercises, start=1):
-        workout_exercise.order_index = index
-
 #Erstellt ein frisches Workout ohne Übungen
 def create_workout(session: Session, name: str, training_plan_id: int | None, started_at: datetime | None) -> Workout:
     if not name or not name.strip():
@@ -154,8 +150,7 @@ def add_workout_exercise(session: Session, workout_id: int, workout_exercise: Wo
         for workout_set in workout_exercise.sets:
             new_sets.append(to_workout_set(workout_set))
         new_workout_exercise = WorkoutExercise(
-            name = workout_exercise.name,
-            order_index = len(workout.workout_exercises) + 1,
+            exercise_id = workout_exercise.exercise_id,
             plan_exercise_id = workout_exercise.plan_exercise_id,
             sets = new_sets,
         )
@@ -178,7 +173,7 @@ def update_workout_exercise(session: Session, workout_id: int, workout_exercise_
         workout_exercise = find_workout_exercise_for_workout_by_id(workout, workout_exercise_id)
         if workout_exercise is None:
             raise ValueError(f"WorkoutExercise with id {workout_exercise_id} not found")
-        workout_exercise.name = workout_exercise_input.name
+        workout_exercise.exercise_id = workout_exercise_input.exercise_id
         workout_exercise.plan_exercise_id = workout_exercise_input.plan_exercise_id
         new_sets : list[WorkoutSet] = []
         for workout_set in workout_exercise_input.sets:
@@ -202,7 +197,6 @@ def remove_workout_exercise(session: Session, workout_id: int, workout_exercise_
         if workout_exercise is None:
             raise ValueError(f"WorkoutExercise with id {workout_exercise_id} not found")
         workout.workout_exercises.remove(workout_exercise)
-        normalize_workout_exercise_order(workout)
         session.commit()
         return workout
     except Exception:
@@ -298,11 +292,11 @@ def convert_workout_exercises_into_plan_exercises(workout_exercises: list[Workou
             if not w_set.isWarmup:
                 set_ref_list.append(w_set)
         if not set_ref_list:
-            raise ValueError(f"No Sets for {ex.name} found that are not warmup sets")
+            raise ValueError(f"No Sets for {ex.exercise.name} found that are not warmup sets")
         #es wird einfach immer der erste Arbeitssatz als Referenz genommen
         reference_set = set_ref_list[0]
         plan_exercise_input = PlanExerciseInput(
-            name = ex.name,
+            exercise_id=ex.exercise_id,
             targeted_weight= reference_set.weight,
             min_targeted_reps=reference_set.reps,
             max_targeted_reps=reference_set.reps,
@@ -311,7 +305,6 @@ def convert_workout_exercises_into_plan_exercises(workout_exercises: list[Workou
             rest_sec=None
         )
         plan_exercises.append(plan_exercise_input)
-
     return plan_exercises
 
 

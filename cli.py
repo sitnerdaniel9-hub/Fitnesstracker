@@ -20,6 +20,8 @@ from application.training_plan import (
     reorder_plan_exercise,
 )
 
+from application.exercise import create_exercise, find_exercise_by_name
+
 from application.workout import (
     create_workout,
     get_workouts,
@@ -70,6 +72,10 @@ def input_int(prompt: str):
     return int(v) if v else None
 
 
+def input_exercise_id(session: Session, prompt: str) -> int:
+    return find_exercise_by_name(session, input(prompt)).id
+
+
 def select_from_list(items, label_fn):
     if not items:
         print("Keine Einträge vorhanden")
@@ -98,7 +104,7 @@ def print_training_plan_detail(plan):
 
         weight = f"{ex.targeted_weight}kg" if ex.targeted_weight is not None else "bodyweight"
 
-        print(f"{ex.order_index}. [id={ex.id}] {ex.name} | {weight} | {target}")
+        print(f"{ex.order_index}. [id={ex.id}] {ex.exercise.name} | {weight} | {target}")
 
 
 def print_workout_detail(workout):
@@ -109,8 +115,8 @@ def print_workout_detail(workout):
         print("Keine Exercises vorhanden")
         return
 
-    for ex in sorted(workout.workout_exercises, key=lambda e: e.order_index):
-        print(f"\n{ex.order_index}. [id={ex.id}] {ex.name}")
+    for ex in workout.workout_exercises:
+        print(f"\n[id={ex.id}] {ex.exercise.name}")
 
         if not ex.sets:
             print("   Keine Sets")
@@ -125,6 +131,25 @@ def print_workout_detail(workout):
             warmup = " (Warmup)" if s.isWarmup else ""
             print(f"   Set {i} [id={s.id}]: {detail}{warmup}")
 
+
+
+def print_training_plans_overview(plans):
+    if not plans:
+        print("Keine Trainingspläne vorhanden")
+        return
+
+    for p in plans:
+        print(f"[id={p.id}] {p.name} (active={p.active}, {len(p.plan_exercises)} Exercises)")
+
+
+def print_workouts_overview(workouts):
+    if not workouts:
+        print("Keine Workouts vorhanden")
+        return
+
+    for w in workouts:
+        status = "abgeschlossen" if w.completed_at is not None else "läuft"
+        print(f"[id={w.id}] {w.name} | gestartet: {w.started_at} | {status} | {len(w.workout_exercises)} Exercises")
 
 
 # Auswahl
@@ -152,6 +177,7 @@ def workout_menu(session: Session, state: AppState):
         print("7 Workout beenden")
         print("8 Workout löschen")
         print("9 Als Trainingsplan speichern")
+        print("10 Alle Workouts anzeigen")
         print("0 Zurück")
 
         c = input("Auswahl: ")
@@ -185,7 +211,7 @@ def workout_menu(session: Session, state: AppState):
                     )
 
                 ex = WorkoutExerciseInput(
-                    name=input("Name: "),
+                    exercise_id=input_exercise_id(session, "Exercise Name: "),
                     plan_exercise_id=input_int("PlanExercise ID: "),
                     sets=sets,
                 )
@@ -237,6 +263,9 @@ def workout_menu(session: Session, state: AppState):
                 plan = save_as_training_plan(session, state.current_workout_id)
                 print(f"Neuer Plan: {plan.id}")
 
+            elif c == "10":
+                print_workouts_overview(get_workouts(session))
+
             elif c == "0":
                 return
 
@@ -256,6 +285,7 @@ def training_plan_menu(session: Session, state: AppState):
         print("5 Umbenennen")
         print("6 Aktiv togglen")
         print("7 Reihenfolge ändern")
+        print("8 Alle Pläne anzeigen")
         print("0 Zurück")
 
         c = input("Auswahl: ")
@@ -275,7 +305,7 @@ def training_plan_menu(session: Session, state: AppState):
 
             elif c == "3":
                 ex = PlanExerciseInput(
-                    name=input("Name: "),
+                    exercise_id=input_exercise_id(session, "Exercise Name: "),
                     targeted_weight=input_float("Weight: "),
                     min_targeted_reps=input_int("Min reps: "),
                     max_targeted_reps=input_int("Max reps: "),
@@ -314,6 +344,9 @@ def training_plan_menu(session: Session, state: AppState):
                     int(input("Neue Position: "))
                 )
                 print_training_plan_detail(plan)
+
+            elif c == "8":
+                print_training_plans_overview(get_all_training_plans(session))
 
             elif c == "0":
                 return
@@ -385,6 +418,7 @@ def run_cli(session: Session):
         print("1 Workout Menü")
         print("2 Trainingsplan Menü")
         print("3 Analyse")
+        print("4 Exercise anlegen")
         print("0 Exit")
 
         c = input("Auswahl: ")
@@ -395,5 +429,11 @@ def run_cli(session: Session):
             training_plan_menu(session, state)
         elif c == "3":
             analysis_menu(session)
+        elif c == "4":
+            try:
+                exercise = create_exercise(session, input("Name: "))
+                print(f"Exercise angelegt: [id={exercise.id}] {exercise.name}")
+            except Exception as e:
+                print(f"Fehler: {e}")
         elif c == "0":
             break

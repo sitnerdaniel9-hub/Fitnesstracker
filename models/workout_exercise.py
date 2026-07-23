@@ -9,12 +9,12 @@ if TYPE_CHECKING:
     from .workout_set import WorkoutSet
     from .plan_exercise import PlanExercise
     from .workout import Workout
+    from .exercise import Exercise
 
 class WorkoutExercise(Base):
     __tablename__ = "workout_exercises"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    order_index: Mapped[int] = mapped_column(nullable=False)
+
     plan_exercise_id: Mapped[int | None] = mapped_column(
         ForeignKey("plan_exercises.id"),
         nullable=True
@@ -22,6 +22,13 @@ class WorkoutExercise(Base):
     plan_exercise: Mapped[PlanExercise] = relationship(
         "PlanExercise"
     )
+    
+    exercise_id: Mapped[int] = mapped_column(
+        ForeignKey("exercises.id"),
+        nullable=False
+    )
+    exercise: Mapped[Exercise] = relationship("Exercise")
+
     workout_id: Mapped[int] = mapped_column(
         ForeignKey("workouts.id"),
         nullable=False
