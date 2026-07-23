@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 
 #Erstellt aus einem PlanExerciseInput eine PlanExercise
 def to_plan_exercise(exercise: PlanExerciseInput, index: int) -> PlanExercise:
+    # TODO: PlanExercise kennt kein `name` mehr und braucht stattdessen exercise_id/exercise
+    # (Exercise wird über eine eigene Relationship referenziert statt per Name-String).
     return PlanExercise(
         name=exercise.name,
         order_index = index,
@@ -109,6 +111,7 @@ def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_
         if ex is None:
             raise ValueError(f"PlanExercise with id {plan_exercise_id} not found")
         
+        # TODO: schreibt das entfernte PlanExercise.name-Attribut; muss auf exercise_id/exercise umgestellt werden.
         ex.name = plan_exercise_input.name
         ex.targeted_weight = plan_exercise_input.targeted_weight
         ex.min_targeted_reps = plan_exercise_input.min_targeted_reps

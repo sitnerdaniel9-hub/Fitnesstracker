@@ -98,6 +98,7 @@ def print_training_plan_detail(plan):
 
         weight = f"{ex.targeted_weight}kg" if ex.targeted_weight is not None else "bodyweight"
 
+        # TODO: liest das entfernte PlanExercise.name-Attribut; müsste ex.exercise.name verwenden.
         print(f"{ex.order_index}. [id={ex.id}] {ex.name} | {weight} | {target}")
 
 
@@ -110,6 +111,7 @@ def print_workout_detail(workout):
         return
 
     for ex in sorted(workout.workout_exercises, key=lambda e: e.order_index):
+        # TODO: liest das entfernte WorkoutExercise.name-Attribut; müsste ex.exercise.name verwenden.
         print(f"\n{ex.order_index}. [id={ex.id}] {ex.name}")
 
         if not ex.sets:
@@ -184,6 +186,7 @@ def workout_menu(session: Session, state: AppState):
                         )
                     )
 
+                # TODO: fragt einen freien `name` ab statt einer exercise_id für die neue Exercise-Relationship.
                 ex = WorkoutExerciseInput(
                     name=input("Name: "),
                     plan_exercise_id=input_int("PlanExercise ID: "),
@@ -274,6 +277,7 @@ def training_plan_menu(session: Session, state: AppState):
                 print_training_plan_detail(plan)
 
             elif c == "3":
+                # TODO: fragt einen freien `name` ab statt einer exercise_id für die neue Exercise-Relationship.
                 ex = PlanExerciseInput(
                     name=input("Name: "),
                     targeted_weight=input_float("Weight: "),

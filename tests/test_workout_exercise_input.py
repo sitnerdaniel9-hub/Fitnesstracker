@@ -1,3 +1,5 @@
+# TODO: WorkoutExerciseInput.name testet ein Feld, das nach Einführung von Exercise
+# (WorkoutExercise hat kein eigenes name mehr) durch exercise_id ersetzt werden muss.
 import pytest
 
 from application.inputs.workout_exercise_input import WorkoutExerciseInput

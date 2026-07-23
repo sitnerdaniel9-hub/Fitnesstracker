@@ -23,6 +23,10 @@ from application.workout import (
 )
 
 
+# TODO: add_workout_exercise/update_workout_exercise/create_training_plan rufen intern
+# WorkoutExercise(name=...)/PlanExercise(name=...) auf, was seit Einführung von Exercise
+# (exercise_id statt name) nicht mehr funktioniert. Betrifft alle Tests in dieser Datei,
+# die diese Funktionen aufrufen.
 def _rep_plan_input(name: str, weight: float) -> PlanExerciseInput:
     return PlanExerciseInput(
         name=name,
@@ -177,6 +181,7 @@ def test_update_and_remove_workout_exercise_normalizes_order(session) -> None:
         ),
     )
     updated = next(ex for ex in w.workout_exercises if ex.id == ex_id)
+    # TODO: liest das entfernte WorkoutExercise.name; müsste über updated.exercise.name laufen.
     assert updated.name == "Bench Press"
     assert len(updated.sets) == 2
 
@@ -253,6 +258,7 @@ def test_save_workout_as_training_plan(session) -> None:
     plan = save_as_training_plan(session, w.id)
     assert plan.id is not None
     assert plan.name == "Template"
+    # TODO: liest das entfernte PlanExercise.name; müsste über ex.exercise.name laufen.
     assert [ex.name for ex in plan.plan_exercises] == ["Bench", "Plank"]
 
 

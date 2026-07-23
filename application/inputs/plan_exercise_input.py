@@ -2,6 +2,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class PlanExerciseInput:
+    # TODO: PlanExercise hat kein eigenes `name` mehr (jetzt über Exercise-Relationship).
+    # Dieses Feld muss durch eine exercise_id ersetzt/ergänzt werden.
     name: str
     targeted_weight: float | None
     min_targeted_reps: int | None
@@ -11,6 +13,7 @@ class PlanExerciseInput:
     rest_sec: float | None
 
     def _validate_name(self) -> None:
+        # TODO: validiert das obsolete `name`-Feld (siehe TODO oben) statt einer Exercise-Referenz.
         if not self.name or not self.name.strip():
             raise ValueError("name must not be empty")
         

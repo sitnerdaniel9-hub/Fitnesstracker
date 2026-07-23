@@ -20,6 +20,9 @@ from application.training_plan import create_training_plan
 from application.workout import add_workout_exercise, create_workout
 
 
+# TODO: create_training_plan/add_workout_exercise rufen intern PlanExercise(name=...)/
+# WorkoutExercise(name=...) auf, was seit Einführung von Exercise (exercise_id statt name)
+# nicht mehr funktioniert. Betrifft alle Tests in dieser Datei, die diese Funktionen aufrufen.
 def _plan_ex(name: str) -> PlanExerciseInput:
     return PlanExerciseInput(
         name=name,
