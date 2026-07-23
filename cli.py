@@ -20,6 +20,8 @@ from application.training_plan import (
     reorder_plan_exercise,
 )
 
+from application.exercise import create_exercise, find_exercise_by_name
+
 from application.workout import (
     create_workout,
     get_workouts,
@@ -70,6 +72,10 @@ def input_int(prompt: str):
     return int(v) if v else None
 
 
+def input_exercise_id(session: Session, prompt: str) -> int:
+    return find_exercise_by_name(session, input(prompt)).id
+
+
 def select_from_list(items, label_fn):
     if not items:
         print("Keine Einträge vorhanden")
@@ -98,8 +104,7 @@ def print_training_plan_detail(plan):
 
         weight = f"{ex.targeted_weight}kg" if ex.targeted_weight is not None else "bodyweight"
 
-        # TODO: liest das entfernte PlanExercise.name-Attribut; müsste ex.exercise.name verwenden.
-        print(f"{ex.order_index}. [id={ex.id}] {ex.name} | {weight} | {target}")
+        print(f"{ex.order_index}. [id={ex.id}] {ex.exercise.name} | {weight} | {target}")
 
 
 def print_workout_detail(workout):
@@ -110,9 +115,8 @@ def print_workout_detail(workout):
         print("Keine Exercises vorhanden")
         return
 
-    for ex in sorted(workout.workout_exercises, key=lambda e: e.order_index):
-        # TODO: liest das entfernte WorkoutExercise.name-Attribut; müsste ex.exercise.name verwenden.
-        print(f"\n{ex.order_index}. [id={ex.id}] {ex.name}")
+    for ex in workout.workout_exercises:
+        print(f"\n[id={ex.id}] {ex.exercise.name}")
 
         if not ex.sets:
             print("   Keine Sets")
@@ -186,9 +190,8 @@ def workout_menu(session: Session, state: AppState):
                         )
                     )
 
-                # TODO: fragt einen freien `name` ab statt einer exercise_id für die neue Exercise-Relationship.
                 ex = WorkoutExerciseInput(
-                    name=input("Name: "),
+                    exercise_id=input_exercise_id(session, "Exercise Name: "),
                     plan_exercise_id=input_int("PlanExercise ID: "),
                     sets=sets,
                 )
@@ -277,9 +280,8 @@ def training_plan_menu(session: Session, state: AppState):
                 print_training_plan_detail(plan)
 
             elif c == "3":
-                # TODO: fragt einen freien `name` ab statt einer exercise_id für die neue Exercise-Relationship.
                 ex = PlanExerciseInput(
-                    name=input("Name: "),
+                    exercise_id=input_exercise_id(session, "Exercise Name: "),
                     targeted_weight=input_float("Weight: "),
                     min_targeted_reps=input_int("Min reps: "),
                     max_targeted_reps=input_int("Max reps: "),
@@ -389,6 +391,7 @@ def run_cli(session: Session):
         print("1 Workout Menü")
         print("2 Trainingsplan Menü")
         print("3 Analyse")
+        print("4 Exercise anlegen")
         print("0 Exit")
 
         c = input("Auswahl: ")
@@ -399,5 +402,11 @@ def run_cli(session: Session):
             training_plan_menu(session, state)
         elif c == "3":
             analysis_menu(session)
+        elif c == "4":
+            try:
+                exercise = create_exercise(session, input("Name: "))
+                print(f"Exercise angelegt: [id={exercise.id}] {exercise.name}")
+            except Exception as e:
+                print(f"Fehler: {e}")
         elif c == "0":
             break

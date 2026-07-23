@@ -32,6 +32,6 @@ class PlanExercise(Base):
         nullable=False
     )
 
-    exercise: Mapped[Exercise] = relationship("Exercise", back_populates="plan_exercises")
+    exercise: Mapped[Exercise] = relationship("Exercise")
 
 

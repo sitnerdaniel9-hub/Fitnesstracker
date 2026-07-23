@@ -27,7 +27,7 @@ class WorkoutExercise(Base):
         ForeignKey("exercises.id"),
         nullable=False
     )
-    exercise: Mapped[Exercise] = relationship("Exercise", back_populates="workout_exercises")
+    exercise: Mapped[Exercise] = relationship("Exercise")
 
     workout_id: Mapped[int] = mapped_column(
         ForeignKey("workouts.id"),

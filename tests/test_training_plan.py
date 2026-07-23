@@ -12,13 +12,19 @@ from application.training_plan import (
     update_plan_exercise,
 )
 from application.inputs.plan_exercise_input import PlanExerciseInput
+from models.exercise import Exercise
 
-# TODO: create_training_plan/add_plan_exercise/update_plan_exercise rufen intern
-# PlanExercise(name=...) auf, was seit Einführung von Exercise (exercise_id statt name)
-# nicht mehr funktioniert. Betrifft alle Tests in dieser Datei, die diese Funktionen aufrufen.
-def _rep_input(name: str, weight: float, min_reps: int, max_reps: int) -> PlanExerciseInput:
+
+def _create_exercise(session, name: str) -> int:
+    exercise = Exercise(name=name)
+    session.add(exercise)
+    session.flush()
+    return exercise.id
+
+
+def _rep_input(session, name: str, weight: float, min_reps: int, max_reps: int) -> PlanExerciseInput:
     return PlanExerciseInput(
-        name=name,
+        exercise_id=_create_exercise(session, name),
         targeted_weight=weight,
         min_targeted_reps=min_reps,
         max_targeted_reps=max_reps,
@@ -33,9 +39,9 @@ def _create_plan_with_three(session):
         session,
         "Plan A",
         [
-            _rep_input("Bench", 80.0, 8, 12),
-            _rep_input("Row", 70.0, 8, 12),
-            _rep_input("Squat", 120.0, 5, 8),
+            _rep_input(session, "Bench", 80.0, 8, 12),
+            _rep_input(session, "Row", 70.0, 8, 12),
+            _rep_input(session, "Squat", 120.0, 5, 8),
         ],
     )
     assert plan.id is not None
@@ -45,7 +51,7 @@ def _create_plan_with_three(session):
 def test_create_training_plan(session) -> None:
     exercises : list[PlanExerciseInput] = []
     plan_exercise1 = PlanExerciseInput(
-        name="Bench Press",
+        exercise_id=_create_exercise(session, "Bench Press"),
         targeted_weight=80.0,
         min_targeted_reps=8,
         max_targeted_reps=12,
@@ -54,7 +60,7 @@ def test_create_training_plan(session) -> None:
         rest_sec=90.0,
     )
     plan_exercise2 = PlanExerciseInput(
-        name="Shoulder Press",
+        exercise_id=_create_exercise(session, "Shoulder Press"),
         targeted_weight=60.0,
         min_targeted_reps=8,
         max_targeted_reps=12,
@@ -63,7 +69,7 @@ def test_create_training_plan(session) -> None:
         rest_sec=90.0,
     )
     plan_exercise3 = PlanExerciseInput(
-        name="Plank",
+        exercise_id=_create_exercise(session, "Plank"),
         targeted_weight=None,
         min_targeted_reps=None,
         max_targeted_reps=None,
@@ -82,8 +88,7 @@ def test_create_training_plan(session) -> None:
 
     first_exercise = training_plan.plan_exercises[0]
 
-    # TODO: liest das entfernte PlanExercise.name; müsste über first_exercise.exercise.name laufen.
-    assert first_exercise.name == "Bench Press"
+    assert first_exercise.exercise.name == "Bench Press"
     assert first_exercise.order_index == 1
     assert first_exercise.targeted_weight == 80.0
     assert first_exercise.min_targeted_reps == 8
@@ -94,8 +99,7 @@ def test_create_training_plan(session) -> None:
 
     third_exercise = training_plan.plan_exercises[2]
 
-    # TODO: liest das entfernte PlanExercise.name; müsste über third_exercise.exercise.name laufen.
-    assert third_exercise.name == "Plank"
+    assert third_exercise.exercise.name == "Plank"
     assert third_exercise.order_index == 3
     assert third_exercise.targeted_weight is None
     assert third_exercise.min_targeted_reps is None
@@ -119,11 +123,10 @@ def test_create_training_plan_raises_for_empty_name(session) -> None:
 
 def test_add_plan_exercise_appends_with_next_order_index(session) -> None:
     plan = _create_plan_with_three(session)
-    plan = add_plan_exercise(session, plan.id, _rep_input("Deadlift", 140.0, 3, 5))
+    plan = add_plan_exercise(session, plan.id, _rep_input(session, "Deadlift", 140.0, 3, 5))
 
     assert len(plan.plan_exercises) == 4
-    # TODO: liest das entfernte PlanExercise.name; müsste über .exercise.name laufen.
-    assert plan.plan_exercises[-1].name == "Deadlift"
+    assert plan.plan_exercises[-1].exercise.name == "Deadlift"
     assert plan.plan_exercises[-1].order_index == 4
 
 
@@ -133,8 +136,7 @@ def test_remove_plan_exercise_normalizes_order_index(session) -> None:
 
     plan = remove_plan_exercise(session, plan.id, mid_id)
 
-    # TODO: liest das entfernte PlanExercise.name; müsste über ex.exercise.name laufen.
-    assert [ex.name for ex in plan.plan_exercises] == ["Bench", "Squat"]
+    assert [ex.exercise.name for ex in plan.plan_exercises] == ["Bench", "Squat"]
     assert [ex.order_index for ex in plan.plan_exercises] == [1, 2]
 
 
@@ -143,12 +145,11 @@ def test_update_plan_exercise_updates_in_place(session) -> None:
     ex = plan.plan_exercises[0]
     ex_id = ex.id
 
-    updated = _rep_input("Bench Press", 82.5, 6, 10)
+    updated = _rep_input(session, "Bench Press", 82.5, 6, 10)
     plan = update_plan_exercise(session, plan.id, ex_id, updated)
 
     same_ex = next(e for e in plan.plan_exercises if e.id == ex_id)
-    # TODO: liest das entfernte PlanExercise.name; müsste über same_ex.exercise.name laufen.
-    assert same_ex.name == "Bench Press"
+    assert same_ex.exercise.name == "Bench Press"
     assert same_ex.targeted_weight == 82.5
     assert same_ex.min_targeted_reps == 6
     assert same_ex.max_targeted_reps == 10
@@ -160,8 +161,7 @@ def test_reorder_plan_exercise_moves_and_normalizes(session) -> None:
 
     plan = reorder_plan_exercise(session, plan.id, squat_id, new_position=1)
 
-    # TODO: liest das entfernte PlanExercise.name; müsste über ex.exercise.name laufen.
-    assert [ex.name for ex in plan.plan_exercises] == ["Squat", "Bench", "Row"]
+    assert [ex.exercise.name for ex in plan.plan_exercises] == ["Squat", "Bench", "Row"]
     assert [ex.order_index for ex in plan.plan_exercises] == [1, 2, 3]
 
 

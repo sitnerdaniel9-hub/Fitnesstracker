@@ -18,20 +18,33 @@ from application.inputs.workout_exercise_input import WorkoutExerciseInput
 from application.inputs.workout_set_input import WorkoutSetInput
 from application.training_plan import create_training_plan
 from application.workout import add_workout_exercise, create_workout
+from models.exercise import Exercise
 
 
-# TODO: create_training_plan/add_workout_exercise rufen intern PlanExercise(name=...)/
-# WorkoutExercise(name=...) auf, was seit Einführung von Exercise (exercise_id statt name)
-# nicht mehr funktioniert. Betrifft alle Tests in dieser Datei, die diese Funktionen aufrufen.
-def _plan_ex(name: str) -> PlanExerciseInput:
+def _create_exercise(session, name: str) -> int:
+    exercise = Exercise(name=name)
+    session.add(exercise)
+    session.flush()
+    return exercise.id
+
+
+def _plan_ex(session, name: str) -> PlanExerciseInput:
     return PlanExerciseInput(
-        name=name,
+        exercise_id=_create_exercise(session, name),
         targeted_weight=80.0,
         min_targeted_reps=8,
         max_targeted_reps=12,
         min_duration_time=None,
         max_duration_time=None,
         rest_sec=90.0,
+    )
+
+
+def _workout_ex(exercise_id: int, plan_exercise_id: int, sets: list[WorkoutSetInput]) -> WorkoutExerciseInput:
+    return WorkoutExerciseInput(
+        exercise_id=exercise_id,
+        plan_exercise_id=plan_exercise_id,
+        sets=sets,
     )
 
 
@@ -73,16 +86,17 @@ def test_count_avg_workouts_per_week_raises_for_start_after_end(session) -> None
 
 
 def test_get_pr_for_exercise_uses_weight_then_tie_breaker_and_ignores_warmup(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex("Bench")])
-    pe_id = plan.plan_exercises[0].id
+    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
+    pe = plan.plan_exercises[0]
+    pe_id = pe.id
 
     w1 = create_workout(session, "W1", training_plan_id=plan.id, started_at=datetime(2026, 1, 1, 10, 0, 0))
     add_workout_exercise(
         session,
         w1.id,
-        WorkoutExerciseInput(
-            name="Bench",
-            plan_exercise_id=pe_id,
+        _workout_ex(
+            pe.exercise_id,
+            pe_id,
             sets=[
                 WorkoutSetInput(weight=100.0, reps=1, duration_time=None, is_warmup=True),
                 WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False),
@@ -94,9 +108,9 @@ def test_get_pr_for_exercise_uses_weight_then_tie_breaker_and_ignores_warmup(ses
     add_workout_exercise(
         session,
         w2.id,
-        WorkoutExerciseInput(
-            name="Bench",
-            plan_exercise_id=pe_id,
+        _workout_ex(
+            pe.exercise_id,
+            pe_id,
             sets=[
                 WorkoutSetInput(weight=85.0, reps=5, duration_time=None, is_warmup=False),
                 WorkoutSetInput(weight=85.0, reps=6, duration_time=None, is_warmup=False),
@@ -112,8 +126,9 @@ def test_get_pr_for_exercise_uses_weight_then_tie_breaker_and_ignores_warmup(ses
 
 
 def test_get_avg_weight_gain_uses_max_per_workout_and_only_completed(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex("Bench")])
-    pe_id = plan.plan_exercises[0].id
+    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
+    pe = plan.plan_exercises[0]
+    pe_id = pe.id
 
     def make_workout(day: int, max_weight: float, completed: bool = True):
         started = datetime(2026, 1, 1 + day, 10, 0, 0)
@@ -121,9 +136,9 @@ def test_get_avg_weight_gain_uses_max_per_workout_and_only_completed(session) ->
         add_workout_exercise(
             session,
             w.id,
-            WorkoutExerciseInput(
-                name="Bench",
-                plan_exercise_id=pe_id,
+            _workout_ex(
+                pe.exercise_id,
+                pe_id,
                 sets=[
                     WorkoutSetInput(weight=max_weight - 5, reps=8, duration_time=None, is_warmup=False),
                     WorkoutSetInput(weight=max_weight, reps=6, duration_time=None, is_warmup=False),
@@ -147,15 +162,16 @@ def test_get_avg_weight_gain_uses_max_per_workout_and_only_completed(session) ->
 
 
 def test_get_avg_weight_gain_returns_none_for_less_than_two_points(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex("Bench")])
-    pe_id = plan.plan_exercises[0].id
+    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
+    pe = plan.plan_exercises[0]
+    pe_id = pe.id
     w = create_workout(session, "W", training_plan_id=plan.id, started_at=datetime(2026, 1, 1, 10, 0, 0))
     add_workout_exercise(
         session,
         w.id,
-        WorkoutExerciseInput(
-            name="Bench",
-            plan_exercise_id=pe_id,
+        _workout_ex(
+            pe.exercise_id,
+            pe_id,
             sets=[WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False)],
         ),
     )
@@ -172,8 +188,9 @@ def test_normalize_weight_rounds_to_0_125_steps() -> None:
 
 
 def test_get_avg_rep_increase_for_weight_class(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex("Bench")])
-    pe_id = plan.plan_exercises[0].id
+    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
+    pe = plan.plan_exercises[0]
+    pe_id = pe.id
 
     base = datetime(2026, 1, 1, 10, 0, 0)
     for i, reps in enumerate([8, 9, 10]):
@@ -181,9 +198,9 @@ def test_get_avg_rep_increase_for_weight_class(session) -> None:
         add_workout_exercise(
             session,
             w.id,
-            WorkoutExerciseInput(
-                name="Bench",
-                plan_exercise_id=pe_id,
+            _workout_ex(
+                pe.exercise_id,
+                pe_id,
                 sets=[
                     WorkoutSetInput(weight=50.01, reps=reps, duration_time=None, is_warmup=False),
                     WorkoutSetInput(weight=50.01, reps=reps - 1, duration_time=None, is_warmup=False),
@@ -204,7 +221,7 @@ def test_get_avg_time_increase_for_weightless_time_exercise(session) -> None:
         "P",
         [
             PlanExerciseInput(
-                name="Plank",
+                exercise_id=_create_exercise(session, "Plank"),
                 targeted_weight=None,
                 min_targeted_reps=None,
                 max_targeted_reps=None,
@@ -214,7 +231,8 @@ def test_get_avg_time_increase_for_weightless_time_exercise(session) -> None:
             )
         ],
     )
-    pe_id = plan.plan_exercises[0].id
+    pe = plan.plan_exercises[0]
+    pe_id = pe.id
 
     base = datetime(2026, 1, 1, 10, 0, 0)
     for i, secs in enumerate([30.0, 45.0, 60.0]):
@@ -222,9 +240,9 @@ def test_get_avg_time_increase_for_weightless_time_exercise(session) -> None:
         add_workout_exercise(
             session,
             w.id,
-            WorkoutExerciseInput(
-                name="Plank",
-                plan_exercise_id=pe_id,
+            _workout_ex(
+                pe.exercise_id,
+                pe_id,
                 sets=[
                     WorkoutSetInput(weight=None, reps=None, duration_time=secs, is_warmup=False),
                     WorkoutSetInput(weight=None, reps=None, duration_time=secs - 5.0, is_warmup=False),
