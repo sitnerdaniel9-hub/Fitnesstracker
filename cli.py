@@ -133,6 +133,25 @@ def print_workout_detail(workout):
 
 
 
+def print_training_plans_overview(plans):
+    if not plans:
+        print("Keine Trainingspläne vorhanden")
+        return
+
+    for p in plans:
+        print(f"[id={p.id}] {p.name} (active={p.active}, {len(p.plan_exercises)} Exercises)")
+
+
+def print_workouts_overview(workouts):
+    if not workouts:
+        print("Keine Workouts vorhanden")
+        return
+
+    for w in workouts:
+        status = "abgeschlossen" if w.completed_at is not None else "läuft"
+        print(f"[id={w.id}] {w.name} | gestartet: {w.started_at} | {status} | {len(w.workout_exercises)} Exercises")
+
+
 # Auswahl
 def select_workout(session: Session):
     workouts = get_workouts(session)
@@ -158,6 +177,7 @@ def workout_menu(session: Session, state: AppState):
         print("7 Workout beenden")
         print("8 Workout löschen")
         print("9 Als Trainingsplan speichern")
+        print("10 Alle Workouts anzeigen")
         print("0 Zurück")
 
         c = input("Auswahl: ")
@@ -243,6 +263,9 @@ def workout_menu(session: Session, state: AppState):
                 plan = save_as_training_plan(session, state.current_workout_id)
                 print(f"Neuer Plan: {plan.id}")
 
+            elif c == "10":
+                print_workouts_overview(get_workouts(session))
+
             elif c == "0":
                 return
 
@@ -262,6 +285,7 @@ def training_plan_menu(session: Session, state: AppState):
         print("5 Umbenennen")
         print("6 Aktiv togglen")
         print("7 Reihenfolge ändern")
+        print("8 Alle Pläne anzeigen")
         print("0 Zurück")
 
         c = input("Auswahl: ")
@@ -320,6 +344,9 @@ def training_plan_menu(session: Session, state: AppState):
                     int(input("Neue Position: "))
                 )
                 print_training_plan_detail(plan)
+
+            elif c == "8":
+                print_training_plans_overview(get_all_training_plans(session))
 
             elif c == "0":
                 return

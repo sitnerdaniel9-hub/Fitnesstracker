@@ -7,6 +7,10 @@ from models.workout import Workout
 from models.workout_set import WorkoutSet
 
 def count_workouts_in_date_range(session: Session, start: datetime, end: datetime) -> int:
+    if start is None:
+            start = datetime.min
+    if end is None:
+        end = datetime.max
     return len(get_workouts_by_date(session, start, end))    
 
 def _get_relevant_datetime(workout: Workout) -> datetime | None:
