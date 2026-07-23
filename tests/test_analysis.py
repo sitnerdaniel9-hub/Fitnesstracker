@@ -118,11 +118,73 @@ def test_get_pr_for_exercise_uses_weight_then_tie_breaker_and_ignores_warmup(ses
         ),
     )
 
-    best = get_pr_for_exercise(session, pe_id)
+    best = get_pr_for_exercise(session, pe.exercise_id)
     assert best is not None
     # höchste Last: 85.0; tie-breaker: 6 reps
     assert best.weight == 85.0
     assert best.reps == 6
+
+
+def test_get_pr_for_exercise_works_for_workout_exercise_without_plan(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+
+    w1 = create_workout(session, "W1", training_plan_id=None, started_at=datetime(2026, 1, 1, 10, 0, 0))
+    add_workout_exercise(
+        session,
+        w1.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[
+                WorkoutSetInput(weight=100.0, reps=1, duration_time=None, is_warmup=True),
+                WorkoutSetInput(weight=20.0, reps=8, duration_time=None, is_warmup=False),
+            ],
+        ),
+    )
+
+    w2 = create_workout(session, "W2", training_plan_id=None, started_at=datetime(2026, 1, 8, 10, 0, 0))
+    add_workout_exercise(
+        session,
+        w2.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[WorkoutSetInput(weight=22.5, reps=6, duration_time=None, is_warmup=False)],
+        ),
+    )
+
+    best = get_pr_for_exercise(session, exercise_id)
+    assert best is not None
+    assert best.weight == 22.5
+    assert best.reps == 6
+
+
+def test_get_avg_weight_gain_works_for_workout_exercise_without_plan(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+
+    def make_workout(day: int, weight: float):
+        started = datetime(2026, 1, 1 + day, 10, 0, 0)
+        w = create_workout(session, f"W{day}", training_plan_id=None, started_at=started)
+        add_workout_exercise(
+            session,
+            w.id,
+            _workout_ex(
+                exercise_id,
+                None,
+                sets=[WorkoutSetInput(weight=weight, reps=10, duration_time=None, is_warmup=False)],
+            ),
+        )
+        w.completed_at = started + timedelta(hours=1)
+        session.commit()
+        return w
+
+    make_workout(0, 20.0)
+    make_workout(1, 22.5)
+    make_workout(2, 25.0)
+
+    gain = get_avg_weight_gain(session, exercise_id)
+    # Differenzen: 2.5 + 2.5 => avg 2.5
+    assert gain == pytest.approx(2.5)
 
 
 def test_get_avg_weight_gain_uses_max_per_workout_and_only_completed(session) -> None:
@@ -156,7 +218,7 @@ def test_get_avg_weight_gain_uses_max_per_workout_and_only_completed(session) ->
     make_workout(2, 85.0, completed=True)
     make_workout(3, 90.0, completed=False)  # wird ignoriert
 
-    gain = get_avg_weight_gain(session, pe_id)
+    gain = get_avg_weight_gain(session, pe.exercise_id)
     # Differenzen: 2.5 + 2.5 => avg 2.5
     assert gain == pytest.approx(2.5)
 
@@ -178,7 +240,7 @@ def test_get_avg_weight_gain_returns_none_for_less_than_two_points(session) -> N
     w.completed_at = datetime(2026, 1, 1, 11, 0, 0)
     session.commit()
 
-    assert get_avg_weight_gain(session, pe_id) is None
+    assert get_avg_weight_gain(session, pe.exercise_id) is None
 
 
 def test_normalize_weight_rounds_to_0_125_steps() -> None:
@@ -210,7 +272,7 @@ def test_get_avg_rep_increase_for_weight_class(session) -> None:
         w.completed_at = base + timedelta(days=i, hours=1)
         session.commit()
 
-    inc = get_avg_rep_increase(session, pe_id, weight=50.0)
+    inc = get_avg_rep_increase(session, pe.exercise_id, weight=50.0)
     assert inc == pytest.approx(1.0)
 
 
@@ -252,6 +314,6 @@ def test_get_avg_time_increase_for_weightless_time_exercise(session) -> None:
         w.completed_at = base + timedelta(days=i, hours=1)
         session.commit()
 
-    inc = get_avg_time_increase(session, pe_id, weight=None)
+    inc = get_avg_time_increase(session, pe.exercise_id, weight=None)
     # Best per workout: 30,45,60 => diffs 15+15 /2 => 15
     assert inc == pytest.approx(15.0)

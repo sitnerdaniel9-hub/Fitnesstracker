@@ -1,5 +1,6 @@
 from application.workout import get_workouts_by_date
 from application.workout import get_workouts
+from repository.workout_exercise_repository import WorkoutExerciseRepository
 from sqlalchemy.orm import Session
 from datetime import datetime
 from models.workout import Workout
@@ -98,39 +99,15 @@ def count_avg_workouts_per_week(
 #Bei Wiederholungsübungen: Das Set mit dem höchsten gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Wiederholungsanzahl.
 #Bei Zeitübungen: Das Set mit dem höchsten Gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Zeit.
 
-def get_pr_for_exercise(session: Session, plan_exercise_id: int) -> WorkoutSet | None:
-    best: WorkoutSet | None = None
-
-    def score(s: WorkoutSet) -> tuple[float, float]:
-        weight = s.weight if s.weight is not None else -1.0
-        # Tie-breaker: nimm reps, wenn vorhanden, sonst duration_time, sonst -1
-        tie = (
-            float(s.reps) if s.reps is not None
-            else float(s.duration_time) if s.duration_time is not None
-            else -1.0
-        )
-        return (weight, tie)
-
-    workouts = get_workouts(session)
-    for workout in workouts:
-        for ex in workout.workout_exercises:
-            if ex.plan_exercise_id != plan_exercise_id:
-                continue
-
-            for s in ex.sets:
-                if s.isWarmup:
-                    continue
-
-                if best is None or score(s) > score(best):
-                    best = s
-
-    return best
+def get_pr_for_exercise(session: Session, exercise_id: int) -> WorkoutSet | None:
+    repo = WorkoutExerciseRepository(session)
+    return repo.find_pr_set_for_exercise(exercise_id)
 
 
 #Liefert die Durschnittliche Gewichtssteigerung für eine Übung in einem Zeitraum. Nur Arbeitssätze werden berücksichtigt. Es wird immer das maximale Gewicht in einem Workout berücksichtigt.
 def get_avg_weight_gain(
     session: Session,
-    plan_exercise_id: int,
+    exercise_id: int,
     start: datetime | None = None,
     end: datetime | None = None,
 ) -> float | None:
@@ -139,28 +116,8 @@ def get_avg_weight_gain(
     if end is None:
         end = datetime.max
 
-    workouts = get_workouts_by_date(session, start, end)
-
-    points: list[tuple[datetime, float]] = []
-    for workout in workouts:
-        if workout.completed_at is None:
-            continue
-
-        for ex in workout.workout_exercises:
-            if ex.plan_exercise_id != plan_exercise_id:
-                continue
-
-            max_weight: float | None = None
-            for s in ex.sets:
-                if s.isWarmup:
-                    continue
-                if s.weight is None:
-                    continue
-                if max_weight is None or s.weight > max_weight:
-                    max_weight = s.weight
-
-            if max_weight is not None:
-                points.append((workout.completed_at, max_weight))
+    repo = WorkoutExerciseRepository(session)
+    points = repo.find_max_weight_points_for_exercise(exercise_id, start, end)
 
     if len(points) < 2:
         return None
@@ -181,37 +138,10 @@ def normalize_weight(w: float) -> float:
     return round(w / 0.125) * 0.125
 
 #Liefert die Durchschnittliche Wiederholungssteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Wiedeholungsanzahl in einem Workout berücksichtigt.
-def get_avg_rep_increase(session: Session, plan_exercise_id: int, weight: float | None) -> float | None:
-    workouts = get_workouts(session)
-    points: list[tuple[datetime, int]] = []
-    for workout in workouts:
-        if workout.completed_at is None:
-            continue
-        best_reps_in_workout: int | None = None
-        for ex in workout.workout_exercises:
-            if ex.plan_exercise_id != plan_exercise_id:
-                continue
-        
-            for s in ex.sets:
-                if s.isWarmup:
-                    continue
-                if s.reps is None:
-                    continue
+def get_avg_rep_increase(session: Session, exercise_id: int, weight: float | None) -> float | None:
+    repo = WorkoutExerciseRepository(session)
+    points = repo.find_best_reps_points_for_exercise(exercise_id, weight)
 
-                if weight is None:
-                    if s.weight is not None:
-                        continue
-                else:
-                    if s.weight is None:
-                        continue
-                    if normalize_weight(s.weight) != normalize_weight(weight):
-                        continue
-
-                if best_reps_in_workout is None or s.reps > best_reps_in_workout:
-                    best_reps_in_workout = s.reps
-        if best_reps_in_workout is not None:
-            points.append((workout.completed_at, best_reps_in_workout))
-        
     if len(points) < 2:
         return None
     points.sort(key=lambda p: p[0])
@@ -224,37 +154,10 @@ def get_avg_rep_increase(session: Session, plan_exercise_id: int, weight: float 
 
 #Liefert die Durchschnittliche Zeitsteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Zeit in einem Workout berücksichtigt.
 
-def get_avg_time_increase(session: Session, plan_exercise_id: int, weight: float| None) -> float | None:
-    workouts = get_workouts(session)
-    points: list[tuple[datetime, float]] = []
-    for workout in workouts:
-        if workout.completed_at is None:
-            continue
-        best_duration_in_workout: float | None = None
-        for ex in workout.workout_exercises:
-            if ex.plan_exercise_id != plan_exercise_id:
-                continue
-        
-            for s in ex.sets:
-                if s.isWarmup:
-                    continue
-                if s.duration_time is None:
-                    continue
+def get_avg_time_increase(session: Session, exercise_id: int, weight: float| None) -> float | None:
+    repo = WorkoutExerciseRepository(session)
+    points = repo.find_best_duration_points_for_exercise(exercise_id, weight)
 
-                if weight is None:
-                    if s.weight is not None:
-                        continue
-                else:
-                    if s.weight is None:
-                        continue
-                    if normalize_weight(s.weight) != normalize_weight(weight):
-                        continue
-
-                if best_duration_in_workout is None or s.duration_time > best_duration_in_workout:
-                    best_duration_in_workout = s.duration_time
-        if best_duration_in_workout is not None:
-            points.append((workout.completed_at, best_duration_in_workout))
-        
     if len(points) < 2:
         return None
     points.sort(key=lambda p: p[0])
