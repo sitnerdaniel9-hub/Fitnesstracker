@@ -1,0 +1,110 @@
+Dashboard 
+    ließt:
+        Alle aktiven Trainingspläne
+        Workout pro Woche Statistiken
+        Laufende Workouts
+    schreibt:
+        neues freies Workout
+        neues Workout nach Plan
+
+Trainingsplanansicht 
+    ließt:
+        Alle Trainingspläne
+        für die Trainingpläne die Anzahl an Übungen
+    schreibt:
+        neue Trainingspläne
+
+Detailansicht vom Trainingsplan 
+    ließt:
+        Alle Details zu einem Trainingsplan
+        Alle Details zu dem im Plan enthaltenen Übungen
+    schreibt:
+        neue Planexercises mit ihren Details
+
+Übungsansicht 
+    ließt:
+        Alle Übungen (Namen)
+    schreibt:
+        neue Exercises mit Namen
+
+Loggingansicht Plan
+    ließt:
+        Planexercises
+        Zielwerte der Planexercises
+    schreibt:
+        neue Sätze für eine Übung
+        neue WorkoutExercises
+        workout beenden
+
+Loggingansicht Frei
+    ließt:
+        nichts
+    schreibt:
+        neue Sätze für eine Übung
+        neue WorkoutExercises
+        workout beenden
+
+Wichtig: Bei Skip wird nichts geschrieben. Das ist nur ne Info auf der UI.
+
+Zusammenfassungsansicht:
+    ließt:
+        Anzahl gemachter Planexercises vs tatsächlich gemachter Planexercises
+        Alle gemachten und übersprungenen Übungen 
+        neue PRs
+    schreibt:
+        nichts
+
+Analyseansicht:
+    ließt:
+        PRs für Übungen
+        Gewichtsentwicklung für Übungen
+        Rep- oder Zeitentwicklung für Übungen
+    schreibt: 
+        nichts
+
+Workoutansicht:
+    ließt:
+        alle Workouts
+        Abschluss aller Workouts
+        laufende Workouts
+        Anzahl übungen in den Workouts
+    schreibt: nichts
+
+
+Identische Writes (view-übergreifend):
+    neue Sätze für eine Übung
+        -> Loggingansicht Plan, Loggingansicht Frei
+    neue WorkoutExercises
+        -> Loggingansicht Plan, Loggingansicht Frei
+    workout beenden
+        -> Loggingansicht Plan, Loggingansicht Frei
+
+Ähnliche Writes (gleiche Kategorie, unterschiedliches Detail):
+    Anlegen von Planstruktur
+        -> neue Trainingspläne (Trainingsplanansicht)
+        -> neue Planexercises mit ihren Details (Detailansicht vom Trainingsplan)
+    Workout starten
+        -> neues freies Workout (Dashboard)
+        -> neues Workout nach Plan (Dashboard)
+
+Identische/sehr ähnliche Reads (view-übergreifend):
+    Laufende Workouts
+        -> Dashboard ("Laufende Workouts")
+        -> Workoutansicht ("laufende Workouts")
+    Trainingspläne (Übersicht)
+        -> Dashboard ("Alle aktiven Trainingspläne")
+        -> Trainingsplanansicht ("Alle Trainingspläne")
+    Planexercise-Details / Zielwerte
+        -> Detailansicht vom Trainingsplan ("Alle Details zu einem Trainingsplan", "Alle Details zu dem im Plan enthaltenen Übungen")
+        -> Loggingansicht Plan ("Planexercises", "Zielwerte der Planexercises")
+
+Ähnliche Reads (gleiche Kategorie, andere Entität):
+    Anzahl Übungen
+        -> Trainingsplanansicht ("für die Trainingpläne die Anzahl an Übungen")
+        -> Workoutansicht ("Anzahl übungen in den Workouts")
+    PR-Daten
+        -> Zusammenfassungsansicht ("neue PRs")
+        -> Analyseansicht ("PRs für Übungen")
+    Workout-Abschluss (Read spiegelt Write)
+        -> Workoutansicht liest "Abschluss aller Workouts"
+        -> Loggingansicht Plan / Loggingansicht Frei schreiben "workout beenden"

@@ -1,5 +1,6 @@
 from application.workout import get_workouts_by_date
 from application.workout import get_workouts
+from application.workout import get_workout
 from repository.workout_exercise_repository import WorkoutExerciseRepository
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -171,5 +172,23 @@ def get_avg_time_increase(session: Session, exercise_id: int, weight: float| Non
         diff_sum += duration_list[i + 1] - duration_list[i]
 
     return diff_sum / (len(duration_list) - 1)
+
+def get_plan_exercise_coverage_for_workout(session: Session, workout_id: int) -> tuple[int, int]:
+    workout = get_workout(session, workout_id)
+    if workout.training_plan_id is None:
+        raise ValueError(f"Workout {workout_id} has no training plan assigned")
+
+    plan_exercises = workout.training_plan.plan_exercises
+    if not plan_exercises:
+        return 0, 0
+
+    logged_ids = {
+        we.plan_exercise_id
+        for we in workout.workout_exercises
+        if we.plan_exercise_id is not None
+    }
+    covered = sum(1 for pe in plan_exercises if pe.id in logged_ids)
+    return covered, len(plan_exercises)
+
 
     

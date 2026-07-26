@@ -21,27 +21,17 @@ def to_workout_set(set: WorkoutSetInput) -> WorkoutSet:
     )
 
 def validate_plan_exercise_logic(workout: Workout, plan_exercise_id: int| None) -> None:
-    # Strenge Invariante:
-    # - Workout ohne TrainingPlan -> WorkoutExercise darf KEINE PlanExercise referenzieren
-    # - Workout mit TrainingPlan -> WorkoutExercise MUSS eine PlanExercise referenzieren
-    if workout.training_plan_id is None:
-        if plan_exercise_id is not None:
-            raise ValueError(
-                "Workout has to refer to a training_plan to make the Workoutexercise refer to a PlanExercise."
-            )
+    if plan_exercise_id is None:
         return
 
-    # workout.training_plan_id ist gesetzt
-    if plan_exercise_id is None:
-        raise ValueError(
-            "WorkoutExercise has to refer to a plan_exercise when the Workout refers to a training_plan."
-        )
+    if workout.training_plan_id is None:
+        raise ValueError("plan_exercise_id is set, but workout has no training_plan_id")
 
     training_plan = workout.training_plan
     for plan_ex in training_plan.plan_exercises:
         if plan_ex.id == plan_exercise_id:
             return
-    raise ValueError(f"plan_exercise with id {plan_exercise_id} not found")
+    raise ValueError(f"plan_exercise {plan_exercise_id} does not belong to training_plan {training_plan.id} of workout {workout.id}")
     
 def find_workout_exercise_for_workout_by_id(workout: Workout, workout_exercise_id: int) -> WorkoutExercise | None:
     for ex in workout.workout_exercises:
