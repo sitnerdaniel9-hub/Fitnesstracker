@@ -73,7 +73,11 @@ def input_int(prompt: str):
 
 
 def input_exercise_id(session: Session, prompt: str) -> int:
-    return find_exercise_by_name(session, input(prompt)).id
+    name = input(prompt)
+    exercise = find_exercise_by_name(session, name)
+    if exercise is None:
+        raise ValueError(f"Exercise '{name}' nicht gefunden")
+    return exercise.id
 
 
 def select_from_list(items, label_fn):

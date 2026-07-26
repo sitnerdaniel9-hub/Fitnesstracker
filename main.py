@@ -1,20 +1,16 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from models.base import Base
 from cli import run_cli
+from db import engine, get_db
 
-engine = create_engine("sqlite:///fitness_tracker.db")
 Base.metadata.create_all(engine)
 
-SessionLocal = sessionmaker(bind=engine)
-session = SessionLocal()
-
 def main():
-    session = SessionLocal()
+    db = get_db()
+    session = next(db)
     try:
         run_cli(session)
     finally:
-        session.close()
+        db.close()
 
 
 if __name__ == "__main__":
