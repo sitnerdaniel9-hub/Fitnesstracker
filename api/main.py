@@ -1,10 +1,19 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
 from api.routers import exercises
 
 app = FastAPI()
+# TODO: in Produktion einschränken
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(exercises.router)
 
 @app.exception_handler(ValueError)
