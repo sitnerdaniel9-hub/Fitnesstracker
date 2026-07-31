@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
-from pytest import Session
 from sqlalchemy.orm import Session
 
 from api.schemas.workout import WorkoutRead

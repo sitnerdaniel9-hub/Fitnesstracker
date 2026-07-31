@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 
-from api.routers import exercises, workouts
+from api.routers import exercises, training_plans, workouts
 
 app = FastAPI()
 # TODO: in Produktion einschränken
@@ -16,6 +16,7 @@ app.add_middleware(
 
 app.include_router(exercises.router)
 app.include_router(workouts.router)
+app.include_router(training_plans.router)
 
 @app.exception_handler(ValueError)
 def value_error_handler(request: Request, exc: ValueError):
