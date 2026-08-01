@@ -24,7 +24,6 @@ def find_plan_exercise_by_id(exercises: list[PlanExercise], plan_exercise_id: in
     
     return None
 
-
 #Sorgt dafür, dass die order_indexe in den Übungen wieder lückenslos sind
 def normalize_plan_exercise_order(training_plan: TrainingPlan) -> None:
     for index, exercise in enumerate(training_plan.plan_exercises, start=1):
