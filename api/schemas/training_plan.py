@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from api.schemas.exercise import ExerciseRead
 
 class TrainingPlanRead(BaseModel):
     id: int
@@ -13,7 +14,7 @@ class TrainingPlanRead(BaseModel):
 class PlanExerciseRead(BaseModel):
     id: int
     training_plan_id: int
-    exercise_id: int
+    exercise: ExerciseRead
     targeted_weight: float | None
     min_targeted_reps: int | None
     max_targeted_reps: int | None
