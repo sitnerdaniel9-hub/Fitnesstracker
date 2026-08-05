@@ -213,6 +213,29 @@ def add_workout_set(session: Session, workout_id: int, workout_exercise_id: int,
         session.rollback()
         raise
 
+#Fügt einem Workout einen Satz hinzu, der zu einer bestimmten PlanExercise gehört
+
+def add_set_to_workout(session: Session, workout_id: int, exercise_id: int, plan_exercise_id: int | None, workout_set_input: WorkoutSetInput) -> Workout:
+    repo = WorkoutRepository(session)
+    workout = repo.find_by_id(workout_id)
+    if workout is None:
+        raise ValueError(f"workout with id {workout_id} not found")
+    validate_plan_exercise_logic(workout, plan_exercise_id)
+    workout_exercise = None
+    for ex in workout.workout_exercises:
+        if ex.exercise_id == exercise_id and ex.plan_exercise_id == plan_exercise_id:
+            workout_exercise = ex
+            break
+    if workout_exercise is None:
+        workout_exercise_input = WorkoutExerciseInput(
+            exercise_id=exercise_id,
+            plan_exercise_id=plan_exercise_id,
+            sets=[workout_set_input]
+        )
+        return add_workout_exercise(session, workout_id, workout_exercise_input)
+    return add_workout_set(session, workout_id, workout_exercise.id, workout_set_input)
+
+
 #Verändert einen Satz in einer WorkoutExercise in einem Workout
 
 def update_workout_set(session: Session, workout_id: int, workout_exercise_id: int, workout_set_id: int, workout_set_input: WorkoutSetInput) -> Workout:
@@ -259,13 +282,13 @@ def remove_workout_set(session: Session, workout_id: int, workout_exercise_id: i
         raise
 
 #Schließt ein laufendes Workout ab
-def end_workout(session: Session, workout_id: int) -> Workout:
+def end_workout(session: Session, workout_id: int, completed_at: datetime | None) -> Workout:
     repo = WorkoutRepository(session)
     try:
         workout = repo.find_by_id(workout_id)
         if workout is None:
             raise ValueError(f"workout with id {workout_id} not found")
-        workout.completed_at = datetime.now()
+        workout.completed_at = completed_at if completed_at is not None else datetime.now()
         session.commit()
         return workout
     except Exception:

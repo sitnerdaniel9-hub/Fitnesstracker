@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from api.schemas.workout import WorkoutRead, WorkoutCreate, WorkoutReadDetailed, WorkoutExerciseCreate, WorkoutSetCreate
+from api.schemas.workout import WorkoutRead, WorkoutCreate, WorkoutReadDetailed, WorkoutExerciseCreate, WorkoutSetCreate, WorkoutFinish, WorkoutSetCreateFromPlan
+from application import workout
 from application.inputs.workout_exercise_input import WorkoutExerciseInput
 from application.inputs.workout_set_input import WorkoutSetInput
 from db import get_db
 from application.workout import (
+    add_set_to_workout,
     create_workout,
     get_workout,
     get_workouts,
@@ -15,7 +17,8 @@ from application.workout import (
     find_workouts_by_training_plan,
     remove_workout,
     add_workout_exercise,
-    add_workout_set
+    add_workout_set,
+    end_workout
 )
 
 
@@ -58,6 +61,10 @@ def create_workout_exercise(workout_id: int, payload: WorkoutExerciseCreate, db:
                                 workout_id,
                                 WorkoutExerciseInput(exercise_id=payload.exercise_id, plan_exercise_id=payload.plan_exercise_id, sets=[]))
 
+@router.post("/{workout_id}/sets", response_model=WorkoutReadDetailed, status_code=201)
+def create_workout_set(workout_id: int, payload: WorkoutSetCreateFromPlan, db: Session = Depends(get_db)):
+    return add_set_to_workout(db, workout_id, payload.exercise_id, payload.plan_exercise_id, WorkoutSetInput(weight=payload.weight, reps=payload.reps, duration_time=payload.duration_time, is_warmup=payload.is_warmup))
+
 @router.post("/{workout_id}/workout_exercises/{workout_exercise_id}/sets", response_model=WorkoutReadDetailed, status_code=201)
 def add_set(workout_id: int, workout_exercise_id: int, payload: WorkoutSetCreate, db: Session = Depends(get_db)):
     return add_workout_set(db, workout_id, workout_exercise_id, WorkoutSetInput(weight=payload.weight, reps=payload.reps, duration_time=payload.duration_time, is_warmup=payload.is_warmup))
@@ -65,4 +72,10 @@ def add_set(workout_id: int, workout_exercise_id: int, payload: WorkoutSetCreate
 @router.delete("/{workout_id}", status_code=204)
 def delete_workout(workout_id: int, db: Session = Depends(get_db)):
     remove_workout(db, workout_id)
+
+
+@router.patch("/{workout_id}", response_model=WorkoutRead)
+def finish_workout(workout_id: int, payload: WorkoutFinish, db: Session = Depends(get_db)):
+    workout = end_workout(db, workout_id, payload.completed_at)
+    return workout
 

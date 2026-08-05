@@ -51,7 +51,18 @@ class WorkoutSetCreate(BaseModel):
     duration_time: float | None = None
     is_warmup: bool = False
 
+class WorkoutSetCreateFromPlan(BaseModel):
+    exercise_id: int
+    plan_exercise_id: int
+    weight: float | None = None
+    reps: int | None = None
+    duration_time: float | None = None
+    is_warmup: bool = False
+
 class WorkoutExerciseCreate(BaseModel):
     exercise_id: int
     plan_exercise_id: int | None = None
+
+class WorkoutFinish(BaseModel):
+    completed_at: datetime | None = None
 
