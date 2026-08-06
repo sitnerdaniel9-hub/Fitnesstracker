@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from api.schemas.exercise import ExerciseRead
+
 class WorkoutRead(BaseModel):
     id: int
     name: str
@@ -23,7 +25,7 @@ class WorkoutSetRead(BaseModel):
 
 class WorkoutExercisesRead(BaseModel):
     id: int
-    exercise_id: int
+    exercise: ExerciseRead
     plan_exercise_id: int | None
     workout_id: int
     sets: list[WorkoutSetRead]
@@ -40,12 +42,24 @@ class WorkoutReadDetailed(BaseModel):
 
     model_config = {"from_attributes": True, "arbitrary_types_allowed": True}
 
+class CoverageRead(BaseModel):
+    covered: int
+    sum_of_exercises: int
+
 class WorkoutCreate(BaseModel):
     name: str
     started_at: datetime | None = None
     training_plan_id: int | None = None
 
 class WorkoutSetCreate(BaseModel):
+    weight: float | None = None
+    reps: int | None = None
+    duration_time: float | None = None
+    is_warmup: bool = False
+
+class WorkoutSetRead(BaseModel):
+    id: int
+    workout_exercise_id: int
     weight: float | None = None
     reps: int | None = None
     duration_time: float | None = None

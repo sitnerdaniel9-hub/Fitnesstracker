@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from api.schemas.workout import WorkoutRead, WorkoutCreate, WorkoutReadDetailed, WorkoutExerciseCreate, WorkoutSetCreate, WorkoutFinish, WorkoutSetCreateFromPlan
+from api.schemas.workout import WorkoutRead, WorkoutCreate, WorkoutReadDetailed, WorkoutExerciseCreate, WorkoutSetCreate, WorkoutFinish, WorkoutSetCreateFromPlan, CoverageRead
 from application import workout
 from application.inputs.workout_exercise_input import WorkoutExerciseInput
 from application.inputs.workout_set_input import WorkoutSetInput
@@ -21,6 +21,9 @@ from application.workout import (
     end_workout
 )
 
+from application.analysis import (
+    get_plan_exercise_coverage_for_workout,
+)
 
 router = APIRouter(prefix="/api/workouts", tags=["workouts"])
 
@@ -50,6 +53,11 @@ def list_workout(workout_id: int, db: Session = Depends(get_db)):
     if workout is None:
         raise HTTPException(status_code=404, detail="Workout not found")
     return workout
+
+@router.get("/{workout_id}/coverage", response_model=CoverageRead)
+def get_plan_exercise_coverage(workout_id: int, db: Session = Depends(get_db)):
+    covered, sum_of_exercises = get_plan_exercise_coverage_for_workout(db, workout_id)
+    return CoverageRead(covered=covered, sum_of_exercises=sum_of_exercises)
 
 @router.post("", response_model=WorkoutRead, status_code=201)
 def create_new_workout(payload: WorkoutCreate, db: Session = Depends(get_db)):

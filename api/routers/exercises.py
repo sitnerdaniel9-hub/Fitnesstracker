@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from api.schemas.exercise import ExerciseCreate, ExerciseRead
+from api.schemas.workout import WorkoutSetRead
 
 from db import get_db
 from application.exercise import (
@@ -8,6 +9,10 @@ from application.exercise import (
     find_exercise_by_name,
     create_exercise,
     find_all_exercises,
+)
+
+from application.analysis import (
+    get_pr_for_exercise
 )
 
 router = APIRouter(prefix="/api/exercises", tags=["exercises"])
@@ -25,6 +30,10 @@ def get_exercise(exercise_id: int, db: Session = Depends(get_db)):
     if exercise is None:
         raise HTTPException(status_code=404, detail="Exercise not found")
     return exercise
+
+@router.get("/{exercise_id}/analysis/pr", response_model=WorkoutSetRead)
+def get_pr(exercise_id: int, db: Session = Depends(get_db)):
+    return get_pr_for_exercise(db, exercise_id)
 
 @router.post("", response_model=ExerciseRead, status_code=201)
 def create_new_exercise(payload: ExerciseCreate, db: Session = Depends(get_db)):
