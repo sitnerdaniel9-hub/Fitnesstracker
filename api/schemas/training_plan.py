@@ -23,3 +23,6 @@ class PlanExerciseRead(BaseModel):
     break_time: float | None
 
     model_config = {"from_attributes": True, "arbitrary_types_allowed": True}
+
+class TrainingPlanCreate(BaseModel):
+    name: str
