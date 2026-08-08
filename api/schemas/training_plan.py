@@ -26,3 +26,12 @@ class PlanExerciseRead(BaseModel):
 
 class TrainingPlanCreate(BaseModel):
     name: str
+
+class PlanExerciseUpdateOrCreate(BaseModel):
+    exercise_id: int
+    targeted_weight: float | None
+    min_targeted_reps: int | None
+    max_targeted_reps: int | None
+    min_duration_time: float | None
+    max_duration_time: float | None
+    rest_sec: float | None

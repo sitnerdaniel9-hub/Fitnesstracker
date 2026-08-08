@@ -50,7 +50,7 @@ def create_training_plan(session: Session, plan_name: str, exercises: list[PlanE
         raise
 
 #Fügt einen PlanExercise am Ende eines Trainingsplans ein.
-def add_plan_exercise(session: Session, training_plan_id: int, exercise: PlanExerciseInput) -> TrainingPlan:
+def add_plan_exercise(session: Session, training_plan_id: int, exercise: PlanExerciseInput) -> PlanExercise:
     repo = TrainingPlanRepository(session)
     try:
         training_plan = repo.find_by_id(training_plan_id)
@@ -59,7 +59,7 @@ def add_plan_exercise(session: Session, training_plan_id: int, exercise: PlanExe
         plan_exercise = to_plan_exercise(exercise, len(training_plan.plan_exercises) + 1)
         training_plan.plan_exercises.append(plan_exercise)
         session.commit()
-        return training_plan
+        return plan_exercise
     except Exception:
         session.rollback()
         raise
@@ -98,7 +98,7 @@ def get_all_training_plans(session: Session) -> list[TrainingPlan]:
     return repo.find_all()
 
 #Aktualisiert eine PlanExercise in einem Trainingsplan
-def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_id: int, plan_exercise_input: PlanExerciseInput) -> TrainingPlan:
+def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_id: int, plan_exercise_input: PlanExerciseInput) -> PlanExercise:
     repo = TrainingPlanRepository(session)
     try:
         training_plan = repo.find_by_id(training_plan_id)
@@ -117,7 +117,7 @@ def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_
         ex.break_time = plan_exercise_input.rest_sec
 
         session.commit()
-        return training_plan
+        return ex
     except Exception:
         session.rollback()
         raise

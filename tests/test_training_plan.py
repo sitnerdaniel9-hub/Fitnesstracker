@@ -123,11 +123,12 @@ def test_create_training_plan_raises_for_empty_name(session) -> None:
 
 def test_add_plan_exercise_appends_with_next_order_index(session) -> None:
     plan = _create_plan_with_three(session)
-    plan = add_plan_exercise(session, plan.id, _rep_input(session, "Deadlift", 140.0, 3, 5))
+    new_exercise = add_plan_exercise(session, plan.id, _rep_input(session, "Deadlift", 140.0, 3, 5))
 
+    plan = find_training_plan_by_id(session, plan.id)
     assert len(plan.plan_exercises) == 4
-    assert plan.plan_exercises[-1].exercise.name == "Deadlift"
-    assert plan.plan_exercises[-1].order_index == 4
+    assert new_exercise.exercise.name == "Deadlift"
+    assert new_exercise.order_index == 4
 
 
 def test_remove_plan_exercise_normalizes_order_index(session) -> None:
@@ -146,9 +147,8 @@ def test_update_plan_exercise_updates_in_place(session) -> None:
     ex_id = ex.id
 
     updated = _rep_input(session, "Bench Press", 82.5, 6, 10)
-    plan = update_plan_exercise(session, plan.id, ex_id, updated)
+    same_ex = update_plan_exercise(session, plan.id, ex_id, updated)
 
-    same_ex = next(e for e in plan.plan_exercises if e.id == ex_id)
     assert same_ex.exercise.name == "Bench Press"
     assert same_ex.targeted_weight == 82.5
     assert same_ex.min_targeted_reps == 6

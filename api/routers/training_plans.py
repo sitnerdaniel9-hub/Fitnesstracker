@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreate
+from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreate, PlanExerciseUpdateOrCreate
 from db import get_db
 from application.training_plan import (
     find_plan_exercise_by_id,
@@ -11,7 +11,11 @@ from application.training_plan import (
     find_training_plans_by_name,
     create_training_plan,
     toggle_training_plan_status,
+    update_plan_exercise,
+    add_plan_exercise
 )
+
+from application.inputs.plan_exercise_input import PlanExerciseInput
 
 router = APIRouter(prefix="/api/training_plans", tags=["training_plans"])
 
@@ -51,6 +55,36 @@ def get_plan_exercise(training_plan_id: int, plan_exercise_id: int, db: Session 
 def add_training_plan(payload: TrainingPlanCreate, db: Session = Depends(get_db)):
     return create_training_plan(db, payload.name, [])
 
+@router.post("/{training_plan_id}/plan_exercises", response_model=PlanExerciseRead)
+def create_plan_exercise(training_plan_id: int, payload: PlanExerciseInput, db: Session = Depends(get_db)):
+    try:
+        return add_plan_exercise(db, training_plan_id, PlanExerciseInput(
+            exercise_id=payload.exercise_id,
+            targeted_weight=payload.targeted_weight,
+            min_targeted_reps=payload.min_targeted_reps,
+            max_targeted_reps=payload.max_targeted_reps,
+            min_duration_time=payload.min_duration_time,
+            max_duration_time=payload.max_duration_time,
+            rest_sec=payload.rest_sec
+        ))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 @router.patch("/{training_plan_id}", response_model=TrainingPlanRead)
 def switch_active_status(training_plan_id: int, db: Session = Depends(get_db)):
     return toggle_training_plan_status(db, training_plan_id)
+
+@router.patch("/{training_plan_id}/plan_exercises/{plan_exercise_id}", response_model=PlanExerciseRead)
+def edit_plan_exercise(training_plan_id: int, plan_exercise_id: int, payload: PlanExerciseUpdateOrCreate, db: Session = Depends(get_db)):
+    try:
+        return update_plan_exercise(db, training_plan_id, plan_exercise_id, PlanExerciseInput(
+            exercise_id=payload.exercise_id,
+            targeted_weight=payload.targeted_weight,
+            min_targeted_reps=payload.min_targeted_reps,
+            max_targeted_reps=payload.max_targeted_reps,
+            min_duration_time=payload.min_duration_time,
+            max_duration_time=payload.max_duration_time,
+            rest_sec=payload.rest_sec
+        ))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
