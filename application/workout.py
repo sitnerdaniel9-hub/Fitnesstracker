@@ -1,8 +1,10 @@
 from repository.workout_repository import WorkoutRepository
 from repository.training_plan_repository import TrainingPlanRepository
+from repository.workout_exercise_repository import WorkoutExerciseRepository
 from application.inputs.workout_set_input import WorkoutSetInput
 from application.inputs.workout_exercise_input import WorkoutExerciseInput
 from application.inputs.plan_exercise_input import PlanExerciseInput
+from application.inputs.analysis_inputs import WeightData, RepData, TimeData
 from application.training_plan import create_training_plan
 from datetime import datetime
 from models.training_plan import TrainingPlan
@@ -330,6 +332,22 @@ def save_as_training_plan(session: Session, workout_id: int) -> TrainingPlan:
         raise ValueError(f"workout with id {workout_id} not found")
     plan_exercises = convert_workout_exercises_into_plan_exercises(workout.workout_exercises)
     return create_training_plan(session, workout.name, plan_exercises)
+
+def get_best_weight_per_workout_by_exercise_id(session: Session, exercise_id: int, start: datetime | None, end: datetime | None) -> list[WeightData]:
+    repo = WorkoutExerciseRepository(session)
+    if start is None:
+        start = datetime.min
+    if end is None:
+        end = datetime.max
+    return repo.find_max_weight_points_for_exercise(exercise_id, start, end)
+
+def get_best_reps_per_workout_by_exercise_id(session: Session, exercise_id: int, weight: float | None) -> list[RepData]:
+    repo = WorkoutExerciseRepository(session)
+    return repo.find_best_reps_points_for_exercise(exercise_id, weight)
+
+def get_best_time_per_workout_by_exercise_id(session: Session, exercise_id: int, weight: float | None) -> list[TimeData]:
+    repo = WorkoutExerciseRepository(session)
+    return repo.find_best_duration_points_for_exercise(exercise_id, weight)
 
 
 

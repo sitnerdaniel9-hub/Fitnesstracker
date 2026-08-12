@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from models.workout import Workout
 from models.workout_set import WorkoutSet
+from application.inputs.analysis_inputs import WeightData, RepData, TimeData
 
 def count_workouts_in_date_range(session: Session, start: datetime, end: datetime) -> int:
     if start is None:
@@ -111,24 +112,12 @@ def get_pr_for_exercise(session: Session, exercise_id: int) -> WorkoutSet | None
 
 #Liefert die Durschnittliche Gewichtssteigerung für eine Übung in einem Zeitraum. Nur Arbeitssätze werden berücksichtigt. Es wird immer das maximale Gewicht in einem Workout berücksichtigt.
 def get_avg_weight_gain(
-    session: Session,
-    exercise_id: int,
-    start: datetime | None = None,
-    end: datetime | None = None,
+    weight_data: list[WeightData],
 ) -> float | None:
-    if start is None:
-        start = datetime.min
-    if end is None:
-        end = datetime.max
-
-    repo = WorkoutExerciseRepository(session)
-    points = repo.find_max_weight_points_for_exercise(exercise_id, start, end)
-
-    if len(points) < 2:
+    if len(weight_data) < 2:
         return None
-
-    points.sort(key=lambda p: p[0])
-    weights = [w for _, w in points]
+    weight_data.sort()
+    weights = [data.weight for data in weight_data]
 
     diff_sum = 0.0
     for i in range(len(weights) - 1):
@@ -136,21 +125,15 @@ def get_avg_weight_gain(
 
     return diff_sum / (len(weights) - 1)
 
-
-
-
 def normalize_weight(w: float) -> float:
     return round(w / 0.125) * 0.125
 
 #Liefert die Durchschnittliche Wiederholungssteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Wiedeholungsanzahl in einem Workout berücksichtigt.
-def get_avg_rep_increase(session: Session, exercise_id: int, weight: float | None) -> float | None:
-    repo = WorkoutExerciseRepository(session)
-    points = repo.find_best_reps_points_for_exercise(exercise_id, weight)
-
-    if len(points) < 2:
+def get_avg_rep_increase(rep_data: list[RepData]) -> float | None:
+    if len(rep_data) < 2:
         return None
-    points.sort(key=lambda p: p[0])
-    rep_list = [w for _, w in points]
+    rep_data.sort()
+    rep_list = [data.reps for data in rep_data]
     diff_sum = 0.0
     for i in range(len(rep_list) - 1):
         diff_sum += rep_list[i + 1] - rep_list[i]
@@ -159,14 +142,16 @@ def get_avg_rep_increase(session: Session, exercise_id: int, weight: float | Non
 
 #Liefert die Durchschnittliche Zeitsteigerung für eine Übung für eine Gewichtsklasse. Es wird immer die Maximale Zeit in einem Workout berücksichtigt.
 
-def get_avg_time_increase(session: Session, exercise_id: int, weight: float| None) -> float | None:
-    repo = WorkoutExerciseRepository(session)
-    points = repo.find_best_duration_points_for_exercise(exercise_id, weight)
-
-    if len(points) < 2:
+def get_avg_time_increase(
+    time_data: list[TimeData],
+) -> float | None:
+    if len(time_data) < 2:
         return None
-    points.sort(key=lambda p: p[0])
-    duration_list = [w for _, w in points]
+
+    time_data.sort()
+
+    duration_list = [data.duration_time for data in time_data]
+
     diff_sum = 0.0
     for i in range(len(duration_list) - 1):
         diff_sum += duration_list[i + 1] - duration_list[i]

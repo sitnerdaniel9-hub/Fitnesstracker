@@ -19,6 +19,7 @@ from application.inputs.workout_set_input import WorkoutSetInput
 from application.training_plan import create_training_plan
 from application.workout import add_workout_exercise, create_workout
 from models.exercise import Exercise
+from application.inputs.analysis_inputs import WeightData, TimeData, RepData
 
 
 def _create_exercise(session, name: str) -> int:
@@ -159,161 +160,71 @@ def test_get_pr_for_exercise_works_for_workout_exercise_without_plan(session) ->
     assert best.reps == 6
 
 
-def test_get_avg_weight_gain_works_for_workout_exercise_without_plan(session) -> None:
-    exercise_id = _create_exercise(session, "Curl")
+def test_get_avg_weight_gain() -> None:
+    weight_data = [
+        WeightData(datetime(2026, 1, 1), 20.0),
+        WeightData(datetime(2026, 1, 2), 22.5),
+        WeightData(datetime(2026, 1, 3), 25.0),
+    ]
 
-    def make_workout(day: int, weight: float):
-        started = datetime(2026, 1, 1 + day, 10, 0, 0)
-        w = create_workout(session, f"W{day}", training_plan_id=None, started_at=started)
-        add_workout_exercise(
-            session,
-            w.id,
-            _workout_ex(
-                exercise_id,
-                None,
-                sets=[WorkoutSetInput(weight=weight, reps=10, duration_time=None, is_warmup=False)],
-            ),
-        )
-        w.completed_at = started + timedelta(hours=1)
-        session.commit()
-        return w
+    assert get_avg_weight_gain(weight_data) == pytest.approx(2.5)
 
-    make_workout(0, 20.0)
-    make_workout(1, 22.5)
-    make_workout(2, 25.0)
+def test_get_avg_weight_gain_returns_none_for_less_than_two_points() -> None:
+    assert get_avg_weight_gain([]) is None
+    assert get_avg_weight_gain(
+        [WeightData(datetime(2026, 1, 1), 20.0)]
+    ) is None
 
-    gain = get_avg_weight_gain(session, exercise_id)
-    # Differenzen: 2.5 + 2.5 => avg 2.5
-    assert gain == pytest.approx(2.5)
+def test_get_avg_weight_gain_sorts_by_completion_time() -> None:
+    weight_data = [
+        WeightData(datetime(2026, 1, 3), 25.0),
+        WeightData(datetime(2026, 1, 1), 20.0),
+        WeightData(datetime(2026, 1, 2), 22.5),
+    ]
 
+    assert get_avg_weight_gain(weight_data) == pytest.approx(2.5)
 
-def test_get_avg_weight_gain_uses_max_per_workout_and_only_completed(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
-    pe = plan.plan_exercises[0]
-    pe_id = pe.id
-
-    def make_workout(day: int, max_weight: float, completed: bool = True):
-        started = datetime(2026, 1, 1 + day, 10, 0, 0)
-        w = create_workout(session, f"W{day}", training_plan_id=plan.id, started_at=started)
-        add_workout_exercise(
-            session,
-            w.id,
-            _workout_ex(
-                pe.exercise_id,
-                pe_id,
-                sets=[
-                    WorkoutSetInput(weight=max_weight - 5, reps=8, duration_time=None, is_warmup=False),
-                    WorkoutSetInput(weight=max_weight, reps=6, duration_time=None, is_warmup=False),
-                    WorkoutSetInput(weight=max_weight + 20, reps=1, duration_time=None, is_warmup=True),
-                ],
-            ),
-        )
-        if completed:
-            w.completed_at = started + timedelta(hours=1)
-            session.commit()
-        return w
-
-    make_workout(0, 80.0, completed=True)
-    make_workout(1, 82.5, completed=True)
-    make_workout(2, 85.0, completed=True)
-    make_workout(3, 90.0, completed=False)  # wird ignoriert
-
-    gain = get_avg_weight_gain(session, pe.exercise_id)
-    # Differenzen: 2.5 + 2.5 => avg 2.5
-    assert gain == pytest.approx(2.5)
-
-
-def test_get_avg_weight_gain_returns_none_for_less_than_two_points(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
-    pe = plan.plan_exercises[0]
-    pe_id = pe.id
-    w = create_workout(session, "W", training_plan_id=plan.id, started_at=datetime(2026, 1, 1, 10, 0, 0))
-    add_workout_exercise(
-        session,
-        w.id,
-        _workout_ex(
-            pe.exercise_id,
-            pe_id,
-            sets=[WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False)],
-        ),
-    )
-    w.completed_at = datetime(2026, 1, 1, 11, 0, 0)
-    session.commit()
-
-    assert get_avg_weight_gain(session, pe.exercise_id) is None
-
-
-def test_normalize_weight_rounds_to_0_125_steps() -> None:
+def test_normalize_weight() -> None:
     assert normalize_weight(50.01) == 50.0
     assert normalize_weight(50.06) == 50.0
     assert normalize_weight(50.07) == 50.125
 
+def test_get_avg_rep_increase() -> None:
+    rep_data = [
+        RepData(datetime(2026, 1, 1), 8),
+        RepData(datetime(2026, 1, 2), 9),
+        RepData(datetime(2026, 1, 3), 10),
+    ]
 
-def test_get_avg_rep_increase_for_weight_class(session) -> None:
-    plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])
-    pe = plan.plan_exercises[0]
-    pe_id = pe.id
+    assert get_avg_rep_increase(rep_data) == pytest.approx(1.0)
 
-    base = datetime(2026, 1, 1, 10, 0, 0)
-    for i, reps in enumerate([8, 9, 10]):
-        w = create_workout(session, f"W{i}", training_plan_id=plan.id, started_at=base + timedelta(days=i))
-        add_workout_exercise(
-            session,
-            w.id,
-            _workout_ex(
-                pe.exercise_id,
-                pe_id,
-                sets=[
-                    WorkoutSetInput(weight=50.01, reps=reps, duration_time=None, is_warmup=False),
-                    WorkoutSetInput(weight=50.01, reps=reps - 1, duration_time=None, is_warmup=False),
-                ],
-            ),
-        )
-        w.completed_at = base + timedelta(days=i, hours=1)
-        session.commit()
+def test_get_avg_rep_increase_returns_none_for_less_than_two_points() -> None:
+    assert get_avg_rep_increase([]) is None
+    assert get_avg_rep_increase(
+        [RepData(datetime(2026, 1, 1), 8)]
+    ) is None
 
-    inc = get_avg_rep_increase(session, pe.exercise_id, weight=50.0)
-    assert inc == pytest.approx(1.0)
+def test_get_avg_time_increase() -> None:
+    time_data = [
+        TimeData(datetime(2026, 1, 1), 30.0),
+        TimeData(datetime(2026, 1, 2), 45.0),
+        TimeData(datetime(2026, 1, 3), 60.0),
+    ]
 
+    assert get_avg_time_increase(time_data) == pytest.approx(15.0)
 
-def test_get_avg_time_increase_for_weightless_time_exercise(session) -> None:
-    # Zeitübung ohne Gewicht (weight=None)
-    plan = create_training_plan(
-        session,
-        "P",
-        [
-            PlanExerciseInput(
-                exercise_id=_create_exercise(session, "Plank"),
-                targeted_weight=None,
-                min_targeted_reps=None,
-                max_targeted_reps=None,
-                min_duration_time=30.0,
-                max_duration_time=60.0,
-                rest_sec=60.0,
-            )
-        ],
-    )
-    pe = plan.plan_exercises[0]
-    pe_id = pe.id
+def test_get_avg_time_increase_returns_none_for_less_than_two_points() -> None:
+    assert get_avg_time_increase([]) is None
+    assert get_avg_time_increase(
+        [TimeData(datetime(2026, 1, 1), 30.0)]
+    ) is None
 
-    base = datetime(2026, 1, 1, 10, 0, 0)
-    for i, secs in enumerate([30.0, 45.0, 60.0]):
-        w = create_workout(session, f"W{i}", training_plan_id=plan.id, started_at=base + timedelta(days=i))
-        add_workout_exercise(
-            session,
-            w.id,
-            _workout_ex(
-                pe.exercise_id,
-                pe_id,
-                sets=[
-                    WorkoutSetInput(weight=None, reps=None, duration_time=secs, is_warmup=False),
-                    WorkoutSetInput(weight=None, reps=None, duration_time=secs - 5.0, is_warmup=False),
-                ],
-            ),
-        )
-        w.completed_at = base + timedelta(days=i, hours=1)
-        session.commit()
+def test_get_avg_weight_gain_can_be_negative() -> None:
+    weight_data = [
+        WeightData(datetime(2026, 1, 1), 100.0),
+        WeightData(datetime(2026, 1, 2), 90.0),
+        WeightData(datetime(2026, 1, 3), 100.0),
+    ]
 
-    inc = get_avg_time_increase(session, pe.exercise_id, weight=None)
-    # Best per workout: 30,45,60 => diffs 15+15 /2 => 15
-    assert inc == pytest.approx(15.0)
+    assert get_avg_weight_gain(weight_data) == pytest.approx(0.0)
+

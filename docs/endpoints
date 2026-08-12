@@ -20,6 +20,7 @@ http://fitnesstracker/api/exercises
 http://fitnesstracker/api/exercises/{id}
 http://fitnesstracker/api/exercises/{id}/analysis/pr
 http://fitnesstracker/api/exercises/{id}/analysis/progression
+http://fitnesstracker/api/exercises/{id}/analysis/progression/{weight}
 
 Analyse:
 
