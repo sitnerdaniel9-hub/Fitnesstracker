@@ -41,7 +41,7 @@ def get_exercise(exercise_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Exercise not found")
     return exercise
 
-@router.get("/{exercise_id}/analysis/pr", response_model=WorkoutSetRead)
+@router.get("/{exercise_id}/analysis/pr", response_model=WorkoutSetRead | None)
 def get_pr(exercise_id: int, db: Session = Depends(get_db)):
     return get_pr_for_exercise(db, exercise_id)
 
