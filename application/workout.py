@@ -349,6 +349,22 @@ def get_best_time_per_workout_by_exercise_id(session: Session, exercise_id: int,
     repo = WorkoutExerciseRepository(session)
     return repo.find_best_duration_points_for_exercise(exercise_id, weight)
 
+def update_workout(session: Session, workout_id: int, name: str, started_at: datetime, completed_at: datetime):
+    repo = WorkoutRepository(session)
+    try:
+        if (completed_at < started_at):
+            raise ValueError("completed_at has to be bigger than started_at")
+        workout = repo.find_by_id(workout_id)
+        if workout is None:
+            raise ValueError(f"workout with id {workout_id} not found")
+        workout.name = name
+        workout.started_at = started_at
+        workout.completed_at = completed_at
+        session.commit()
+        return workout
+    except Exception:
+        session.rollback()
+        raise
 
 
     

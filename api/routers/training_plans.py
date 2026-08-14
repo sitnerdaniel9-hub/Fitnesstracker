@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreate, PlanExerciseUpdateOrCreate
+from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreateOrUpdate, PlanExerciseUpdateOrCreate
 from db import get_db
 from application.training_plan import (
     find_plan_exercise_by_id,
@@ -12,7 +12,15 @@ from application.training_plan import (
     create_training_plan,
     toggle_training_plan_status,
     update_plan_exercise,
-    add_plan_exercise
+    add_plan_exercise,
+    remove_training_plan,
+    remove_plan_exercise,
+    rename_training_plan,
+    reorder_plan_exercise
+)
+
+from application.workout import (
+    save_as_training_plan
 )
 
 from application.inputs.plan_exercise_input import PlanExerciseInput
@@ -51,9 +59,13 @@ def get_plan_exercise(training_plan_id: int, plan_exercise_id: int, db: Session 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.post("", response_model = TrainingPlanRead)
-def add_training_plan(payload: TrainingPlanCreate, db: Session = Depends(get_db)):
+@router.post("", response_model = TrainingPlanRead, status_code=201)
+def add_training_plan(payload: TrainingPlanCreateOrUpdate, db: Session = Depends(get_db)):
     return create_training_plan(db, payload.name, [])
+
+@router.post("/from_workout", response_model=TrainingPlanRead, status_code=201)
+def save_workout_as_training_plan(workout_id: int, db: Session = Depends(get_db)):
+    return save_as_training_plan(db, workout_id)
 
 @router.post("/{training_plan_id}/plan_exercises", response_model=PlanExerciseRead)
 def create_plan_exercise(training_plan_id: int, payload: PlanExerciseInput, db: Session = Depends(get_db)):
@@ -74,6 +86,10 @@ def create_plan_exercise(training_plan_id: int, payload: PlanExerciseInput, db: 
 def switch_active_status(training_plan_id: int, db: Session = Depends(get_db)):
     return toggle_training_plan_status(db, training_plan_id)
 
+@router.patch("/{training_plan_id}", response_model=TrainingPlanRead)
+def edit_training_plan_name(training_plan_id: int, payload: TrainingPlanCreateOrUpdate, db: Session = Depends(get_db)):
+    return rename_training_plan(db, training_plan_id, payload.name)
+
 @router.patch("/{training_plan_id}/plan_exercises/{plan_exercise_id}", response_model=PlanExerciseRead)
 def edit_plan_exercise(training_plan_id: int, plan_exercise_id: int, payload: PlanExerciseUpdateOrCreate, db: Session = Depends(get_db)):
     try:
@@ -88,3 +104,19 @@ def edit_plan_exercise(training_plan_id: int, plan_exercise_id: int, payload: Pl
         ))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+@router.delete("", status_code=204)
+def delete_training_plans(ids: list[int], db: Session = Depends(get_db)):
+    for id in ids:
+        try:
+            remove_training_plan(db, id)
+        except ValueError:
+            continue
+
+@router.delete("/{training_plan_id}/plan_exercises", status_code=204)
+def delete_plan_exercises(training_plan_id: int, ids: list[int], db: Session = Depends(get_db)):
+    for id in ids:
+        try:
+            remove_plan_exercise(db, training_plan_id, id)
+        except ValueError:
+            continue

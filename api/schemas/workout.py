@@ -46,9 +46,10 @@ class CoverageRead(BaseModel):
     covered: int
     sum_of_exercises: int
 
-class WorkoutCreate(BaseModel):
+class WorkoutCreateOrUpdate(BaseModel):
     name: str
     started_at: datetime | None = None
+    completed_at: datetime | None = None
     training_plan_id: int | None = None
 
 class WorkoutSetCreate(BaseModel):

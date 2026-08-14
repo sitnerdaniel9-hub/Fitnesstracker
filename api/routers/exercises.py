@@ -54,8 +54,8 @@ def get_weight_gain(exercise_id: int, start: datetime | None = None, end: dateti
         avg_weight_gain=avg_weight_gain,
     )
 
-@router.get("/{exercise_id}/analysis/progression/{weight}", response_model=ProgressionRead)
-def get_progression_for_weight(exercise_id: int, weight: float | None, db: Session = Depends(get_db)):
+@router.get("/{exercise_id}/analysis/progression/weight", response_model=ProgressionRead)
+def get_progression_for_weight(exercise_id: int, weight: float | None = None, db: Session = Depends(get_db)):
     rep_data = get_best_reps_per_workout_by_exercise_id(db, exercise_id, weight)
     time_data = get_best_time_per_workout_by_exercise_id(db, exercise_id, weight)
     avg_rep_gain = get_avg_rep_increase(rep_data)

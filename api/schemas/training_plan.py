@@ -24,7 +24,7 @@ class PlanExerciseRead(BaseModel):
 
     model_config = {"from_attributes": True, "arbitrary_types_allowed": True}
 
-class TrainingPlanCreate(BaseModel):
+class TrainingPlanCreateOrUpdate(BaseModel):
     name: str
 
 class PlanExerciseUpdateOrCreate(BaseModel):

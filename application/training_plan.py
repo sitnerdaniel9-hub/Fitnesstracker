@@ -176,7 +176,18 @@ def find_training_plans_by_name(session: Session, search: str) -> list[TrainingP
     repo = TrainingPlanRepository(session)
     return repo.find_by_name(search)
 
-
+#Löscht einen Trainingsplan
+def remove_training_plan(session: Session, id: int) -> None:
+    repo = TrainingPlanRepository(session)
+    try:
+        training_plan = repo.find_by_id(id)
+        if training_plan is None:
+            raise ValueError(f"training_plan with id {id} not found")
+        repo.delete(training_plan)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
 
 
