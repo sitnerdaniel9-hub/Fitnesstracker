@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreateOrUpdate, PlanExerciseUpdateOrCreate
+from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreateOrUpdate, PlanExerciseUpdateOrCreate, PlanExerciseReorder
 from db import get_db
 from application.training_plan import (
     find_plan_exercise_by_id,
@@ -104,7 +104,15 @@ def edit_plan_exercise(training_plan_id: int, plan_exercise_id: int, payload: Pl
         ))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    
+
+@router.patch("/{training_plan_id}/plan_exercises/{plan_exercise_id}/reorder", response_model=PlanExerciseRead)
+def edit_plan_exercise_order(training_plan_id: int, plan_exercise_id: int, payload: PlanExerciseReorder, db: Session = Depends(get_db)):
+    try:
+        training_plan = reorder_plan_exercise(db, training_plan_id, plan_exercise_id, payload.new_position)
+        return find_plan_exercise_by_id(training_plan.plan_exercises, plan_exercise_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 @router.delete("", status_code=204)
 def delete_training_plans(ids: list[int], db: Session = Depends(get_db)):
     for id in ids:

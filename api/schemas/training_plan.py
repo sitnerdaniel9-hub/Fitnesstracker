@@ -15,6 +15,7 @@ class PlanExerciseRead(BaseModel):
     id: int
     training_plan_id: int
     exercise: ExerciseRead
+    order_index: int
     targeted_weight: float | None
     min_targeted_reps: int | None
     max_targeted_reps: int | None
@@ -35,3 +36,6 @@ class PlanExerciseUpdateOrCreate(BaseModel):
     min_duration_time: float | None
     max_duration_time: float | None
     rest_sec: float | None
+
+class PlanExerciseReorder(BaseModel):
+    new_position: int
