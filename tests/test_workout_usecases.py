@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
+from application.inputs.analysis_inputs import RepData, TimeData, WeightData
 from application.inputs.plan_exercise_input import PlanExerciseInput
 from application.inputs.workout_exercise_input import WorkoutExerciseInput
 from application.inputs.workout_set_input import WorkoutSetInput
@@ -20,6 +21,9 @@ from application.workout import (
     save_as_training_plan,
     update_workout_exercise,
     update_workout_set,
+    get_best_weight_per_workout_by_exercise_id,
+    get_best_reps_per_workout_by_exercise_id,
+    get_best_time_per_workout_by_exercise_id
 )
 from models.exercise import Exercise
 
@@ -55,6 +59,14 @@ def _create_plan(session):
     plan = create_training_plan(session, "P", [_rep_plan_input(session, "Bench", 80.0), _rep_plan_input(session, "Row", 70.0)])
     assert len(plan.plan_exercises) == 2
     return plan
+
+
+def _create_completed_workout(session, name: str, started_at: datetime, completed_at: datetime | None):
+    w = create_workout(session, name=name, training_plan_id=None, started_at=started_at)
+    if completed_at is not None:
+        w.completed_at = completed_at
+        session.commit()
+    return w
 
 
 def test_create_workout_without_plan_sets_started_at_and_completed_none(session) -> None:
@@ -262,3 +274,205 @@ def test_remove_workout_deletes_aggregate(session) -> None:
     remove_workout(session, w.id)
     with pytest.raises(ValueError):
         get_workout(session, w.id)
+
+
+def test_get_best_weight_per_workout_by_exercise_id_returns_empty_list_without_data(session) -> None:
+    exercise = _create_exercise(session, "Curl")
+
+    result = get_best_weight_per_workout_by_exercise_id(session, exercise, None, None)
+
+    assert result == []
+
+
+def test_get_best_weight_per_workout_by_exercise_id_picks_max_weight_and_ignores_warmups(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+    day1 = datetime(2026, 1, 1)
+    w1 = _create_completed_workout(session, "W1", started_at=day1, completed_at=day1)
+    w1 = add_workout_exercise(
+        session,
+        w1.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[
+                WorkoutSetInput(weight=100.0, reps=1, duration_time=None, is_warmup=True),
+                WorkoutSetInput(weight=40.0, reps=8, duration_time=None, is_warmup=False),
+                WorkoutSetInput(weight=45.0, reps=6, duration_time=None, is_warmup=False),
+            ],
+        ),
+    )
+
+    result = get_best_weight_per_workout_by_exercise_id(session, exercise_id, None, None)
+
+    assert result == [WeightData(completed_at=day1, weight=45.0)]
+
+
+def test_get_best_weight_per_workout_by_exercise_id_excludes_incomplete_and_other_exercise_workouts(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+    other_exercise_id = _create_exercise(session, "Press")
+    day1 = datetime(2026, 1, 1)
+
+    incomplete = create_workout(session, name="Incomplete", training_plan_id=None, started_at=day1)
+    add_workout_exercise(
+        session,
+        incomplete.id,
+        _workout_ex(exercise_id, None, sets=[WorkoutSetInput(weight=99.0, reps=5, duration_time=None, is_warmup=False)]),
+    )
+
+    other = _create_completed_workout(session, "Other", started_at=day1, completed_at=day1)
+    add_workout_exercise(
+        session,
+        other.id,
+        _workout_ex(other_exercise_id, None, sets=[WorkoutSetInput(weight=99.0, reps=5, duration_time=None, is_warmup=False)]),
+    )
+
+    result = get_best_weight_per_workout_by_exercise_id(session, exercise_id, None, None)
+
+    assert result == []
+
+
+def test_get_best_weight_per_workout_by_exercise_id_orders_by_date_and_filters_by_range(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+    day1 = datetime(2026, 1, 1)
+    day2 = datetime(2026, 1, 8)
+    day3 = datetime(2026, 1, 15)
+
+    for day, weight in [(day2, 50.0), (day1, 40.0), (day3, 60.0)]:
+        w = _create_completed_workout(session, f"W-{day.isoformat()}", started_at=day, completed_at=day)
+        add_workout_exercise(
+            session,
+            w.id,
+            _workout_ex(exercise_id, None, sets=[WorkoutSetInput(weight=weight, reps=5, duration_time=None, is_warmup=False)]),
+        )
+
+    all_points = get_best_weight_per_workout_by_exercise_id(session, exercise_id, None, None)
+    assert all_points == [
+        WeightData(completed_at=day1, weight=40.0),
+        WeightData(completed_at=day2, weight=50.0),
+        WeightData(completed_at=day3, weight=60.0),
+    ]
+
+    ranged = get_best_weight_per_workout_by_exercise_id(session, exercise_id, day1 + timedelta(days=1), day3 - timedelta(days=1))
+    assert ranged == [WeightData(completed_at=day2, weight=50.0)]
+
+
+def test_get_best_reps_per_workout_by_exercise_id_returns_empty_list_without_data(session) -> None:
+    exercise = _create_exercise(session, "Curl")
+
+    result = get_best_reps_per_workout_by_exercise_id(session, exercise, weight=50.0)
+
+    assert result == []
+
+
+def test_get_best_reps_per_workout_by_exercise_id_filters_by_weight_class_and_ignores_warmups(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+    day1 = datetime(2026, 1, 1)
+    w = _create_completed_workout(session, "W1", started_at=day1, completed_at=day1)
+    add_workout_exercise(
+        session,
+        w.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[
+                WorkoutSetInput(weight=50.0, reps=20, duration_time=None, is_warmup=True),
+                WorkoutSetInput(weight=50.0, reps=8, duration_time=None, is_warmup=False),
+                WorkoutSetInput(weight=50.0, reps=10, duration_time=None, is_warmup=False),
+                WorkoutSetInput(weight=60.0, reps=15, duration_time=None, is_warmup=False),
+            ],
+        ),
+    )
+
+    result = get_best_reps_per_workout_by_exercise_id(session, exercise_id, weight=50.0)
+
+    assert result == [RepData(completed_at=day1, reps=10)]
+
+
+def test_get_best_reps_per_workout_by_exercise_id_normalizes_weight_to_nearest_eighth(session) -> None:
+    exercise_id = _create_exercise(session, "Curl")
+    day1 = datetime(2026, 1, 1)
+    w = _create_completed_workout(session, "W1", started_at=day1, completed_at=day1)
+    add_workout_exercise(
+        session,
+        w.id,
+        _workout_ex(exercise_id, None, sets=[WorkoutSetInput(weight=50.06, reps=7, duration_time=None, is_warmup=False)]),
+    )
+
+    result = get_best_reps_per_workout_by_exercise_id(session, exercise_id, weight=50.0)
+
+    assert result == [RepData(completed_at=day1, reps=7)]
+
+
+def test_get_best_reps_per_workout_by_exercise_id_none_weight_matches_only_bodyweight_sets(session) -> None:
+    exercise_id = _create_exercise(session, "Pull-Up")
+    day1 = datetime(2026, 1, 1)
+    w = _create_completed_workout(session, "W1", started_at=day1, completed_at=day1)
+    add_workout_exercise(
+        session,
+        w.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[
+                WorkoutSetInput(weight=None, reps=12, duration_time=None, is_warmup=False),
+                WorkoutSetInput(weight=10.0, reps=5, duration_time=None, is_warmup=False),
+            ],
+        ),
+    )
+
+    result = get_best_reps_per_workout_by_exercise_id(session, exercise_id, weight=None)
+
+    assert result == [RepData(completed_at=day1, reps=12)]
+
+
+def test_get_best_time_per_workout_by_exercise_id_returns_empty_list_without_data(session) -> None:
+    exercise = _create_exercise(session, "Plank")
+
+    result = get_best_time_per_workout_by_exercise_id(session, exercise, weight=None)
+
+    assert result == []
+
+
+def test_get_best_time_per_workout_by_exercise_id_picks_max_duration_for_bodyweight_and_ignores_warmups(session) -> None:
+    exercise_id = _create_exercise(session, "Plank")
+    day1 = datetime(2026, 1, 1)
+    w = _create_completed_workout(session, "W1", started_at=day1, completed_at=day1)
+    add_workout_exercise(
+        session,
+        w.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[
+                WorkoutSetInput(weight=None, reps=None, duration_time=120.0, is_warmup=True),
+                WorkoutSetInput(weight=None, reps=None, duration_time=60.0, is_warmup=False),
+                WorkoutSetInput(weight=None, reps=None, duration_time=90.0, is_warmup=False),
+            ],
+        ),
+    )
+
+    result = get_best_time_per_workout_by_exercise_id(session, exercise_id, weight=None)
+
+    assert result == [TimeData(completed_at=day1, duration_time=90.0)]
+
+
+def test_get_best_time_per_workout_by_exercise_id_filters_by_weight_class(session) -> None:
+    exercise_id = _create_exercise(session, "Weighted Plank")
+    day1 = datetime(2026, 1, 1)
+    w = _create_completed_workout(session, "W1", started_at=day1, completed_at=day1)
+    add_workout_exercise(
+        session,
+        w.id,
+        _workout_ex(
+            exercise_id,
+            None,
+            sets=[
+                WorkoutSetInput(weight=20.0, reps=None, duration_time=45.0, is_warmup=False),
+                WorkoutSetInput(weight=10.0, reps=None, duration_time=75.0, is_warmup=False),
+            ],
+        ),
+    )
+
+    result = get_best_time_per_workout_by_exercise_id(session, exercise_id, weight=20.0)
+
+    assert result == [TimeData(completed_at=day1, duration_time=45.0)]

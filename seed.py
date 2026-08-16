@@ -52,7 +52,7 @@ def seed():
     kniebeuge_pe = plan.plan_exercises[0]
     kreuzheben_pe = plan.plan_exercises[1]
 
-    plan = add_plan_exercise(
+    plank_pe = add_plan_exercise(
         session,
         plan.id,
         PlanExerciseInput(
@@ -65,7 +65,6 @@ def seed():
             rest_sec=60.0,
         ),
     )
-    plank_pe = plan.plan_exercises[2]
 
     # Vier abgeschlossene, plangebundene Workouts über vier Wochen mit steigenden Gewichten
     base = datetime.now() - timedelta(weeks=4)

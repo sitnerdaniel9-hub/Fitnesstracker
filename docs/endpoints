@@ -1,0 +1,27 @@
+Workout-Endpunkte
+
+http://fitnesstracker/api/workouts (Running und Completed über PATCH, Frei oder nach Plan im Req.Body)
+http://fitnesstracker/api/workouts/{id}
+http://fitnesstracker/api/workouts/{id}/workout-exercises
+http://fitnesstracker/api/workouts/{id}/workout-exercises/{id}
+http://fitnesstracker/api/workouts/{id}/workout-exercises/{id}/workout-sets
+http://fitnesstracker/api/workouts/{id}/workout-exercises/{id}/workout-sets/{id}
+
+Trainingsplan-Endpunkte:
+
+http://fitnesstracker/api/trainingplans
+http://fitnesstracker/api/trainingplans/{id}
+http://fitnesstracker/api/trainingplans/{id}/plan-exercises
+http://fitnesstracker/api/trainingplans/{id}/plan-exercises/{id}
+
+Exercise-Endpunkte:
+
+http://fitnesstracker/api/exercises
+http://fitnesstracker/api/exercises/{id}
+http://fitnesstracker/api/exercises/{id}/analysis/pr
+http://fitnesstracker/api/exercises/{id}/analysis/progression
+http://fitnesstracker/api/exercises/{id}/analysis/progression/{weight}
+
+Analyse:
+
+http://fitnesstracker/api/analysis/workout-statistics

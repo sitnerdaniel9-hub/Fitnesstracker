@@ -6,6 +6,7 @@ from sqlalchemy import select, func
 from models.workout import Workout
 from models.workout_exercise import WorkoutExercise
 from models.workout_set import WorkoutSet
+from application.inputs.analysis_inputs import WeightData, RepData, TimeData
 
 class WorkoutExerciseRepository:
     def __init__(self, session: Session):
@@ -33,7 +34,7 @@ class WorkoutExerciseRepository:
         exercise_id: int,
         start: datetime,
         end: datetime,
-    ) -> list[tuple[datetime, float]]:
+    ) -> list[WeightData]:
         stmt = (
             select(Workout.completed_at, func.max(WorkoutSet.weight))
             .join(WorkoutExercise, WorkoutExercise.workout_id == Workout.id)
@@ -47,7 +48,15 @@ class WorkoutExerciseRepository:
             .group_by(Workout.id, Workout.completed_at)
             .order_by(Workout.completed_at)
         )
-        return list(self.session.execute(stmt).all())
+        rows = self.session.execute(stmt).all()
+
+        return [
+            WeightData(
+                completed_at=completed_at,
+                weight=weight,
+            )
+            for completed_at, weight in rows
+        ]
 
     #Liefert je abgeschlossenem Workout die maximale Wiederholungszahl für eine Exercise in einer Gewichtsklasse.
     #weight=None -> nur Sets ohne Gewicht (Körpergewicht). Sonst wird auf 0.125 genau normalisiert verglichen.
@@ -55,7 +64,7 @@ class WorkoutExerciseRepository:
         self,
         exercise_id: int,
         weight: float | None,
-    ) -> list[tuple[datetime, int]]:
+    ) -> list[RepData]:
         stmt = (
             select(Workout.completed_at, func.max(WorkoutSet.reps))
             .join(WorkoutExercise, WorkoutExercise.workout_id == Workout.id)
@@ -74,7 +83,15 @@ class WorkoutExerciseRepository:
             stmt = stmt.where(WorkoutSet.weight.is_not(None)).where(normalized_weight == normalized_target)
 
         stmt = stmt.group_by(Workout.id, Workout.completed_at).order_by(Workout.completed_at)
-        return list(self.session.execute(stmt).all())
+        rows = self.session.execute(stmt).all()
+        
+        return [
+            RepData(
+                completed_at=completed_at,
+                reps=reps,
+            )
+            for completed_at, reps in rows
+        ]
 
     #Liefert je abgeschlossenem Workout die maximale Zeit für eine Exercise in einer Gewichtsklasse.
     #weight=None -> nur Sets ohne Gewicht (Körpergewicht). Sonst wird auf 0.125 genau normalisiert verglichen.
@@ -82,7 +99,7 @@ class WorkoutExerciseRepository:
         self,
         exercise_id: int,
         weight: float | None,
-    ) -> list[tuple[datetime, float]]:
+    ) -> list[TimeData]:
         stmt = (
             select(Workout.completed_at, func.max(WorkoutSet.duration_time))
             .join(WorkoutExercise, WorkoutExercise.workout_id == Workout.id)
@@ -101,4 +118,12 @@ class WorkoutExerciseRepository:
             stmt = stmt.where(WorkoutSet.weight.is_not(None)).where(normalized_weight == normalized_target)
 
         stmt = stmt.group_by(Workout.id, Workout.completed_at).order_by(Workout.completed_at)
-        return list(self.session.execute(stmt).all())
+        rows = self.session.execute(stmt).all()
+        
+        return [
+            TimeData(
+                completed_at=completed_at,
+                duration_time=duration_time,
+            )
+            for completed_at, duration_time in rows
+        ]

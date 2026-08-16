@@ -24,7 +24,6 @@ def find_plan_exercise_by_id(exercises: list[PlanExercise], plan_exercise_id: in
     
     return None
 
-
 #Sorgt dafür, dass die order_indexe in den Übungen wieder lückenslos sind
 def normalize_plan_exercise_order(training_plan: TrainingPlan) -> None:
     for index, exercise in enumerate(training_plan.plan_exercises, start=1):
@@ -51,7 +50,7 @@ def create_training_plan(session: Session, plan_name: str, exercises: list[PlanE
         raise
 
 #Fügt einen PlanExercise am Ende eines Trainingsplans ein.
-def add_plan_exercise(session: Session, training_plan_id: int, exercise: PlanExerciseInput) -> TrainingPlan:
+def add_plan_exercise(session: Session, training_plan_id: int, exercise: PlanExerciseInput) -> PlanExercise:
     repo = TrainingPlanRepository(session)
     try:
         training_plan = repo.find_by_id(training_plan_id)
@@ -60,7 +59,7 @@ def add_plan_exercise(session: Session, training_plan_id: int, exercise: PlanExe
         plan_exercise = to_plan_exercise(exercise, len(training_plan.plan_exercises) + 1)
         training_plan.plan_exercises.append(plan_exercise)
         session.commit()
-        return training_plan
+        return plan_exercise
     except Exception:
         session.rollback()
         raise
@@ -99,7 +98,7 @@ def get_all_training_plans(session: Session) -> list[TrainingPlan]:
     return repo.find_all()
 
 #Aktualisiert eine PlanExercise in einem Trainingsplan
-def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_id: int, plan_exercise_input: PlanExerciseInput) -> TrainingPlan:
+def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_id: int, plan_exercise_input: PlanExerciseInput) -> PlanExercise:
     repo = TrainingPlanRepository(session)
     try:
         training_plan = repo.find_by_id(training_plan_id)
@@ -118,7 +117,7 @@ def update_plan_exercise(session: Session, training_plan_id: int, plan_exercise_
         ex.break_time = plan_exercise_input.rest_sec
 
         session.commit()
-        return training_plan
+        return ex
     except Exception:
         session.rollback()
         raise
@@ -177,7 +176,18 @@ def find_training_plans_by_name(session: Session, search: str) -> list[TrainingP
     repo = TrainingPlanRepository(session)
     return repo.find_by_name(search)
 
-
+#Löscht einen Trainingsplan
+def remove_training_plan(session: Session, id: int) -> None:
+    repo = TrainingPlanRepository(session)
+    try:
+        training_plan = repo.find_by_id(id)
+        if training_plan is None:
+            raise ValueError(f"training_plan with id {id} not found")
+        repo.delete(training_plan)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
 
 

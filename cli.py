@@ -18,6 +18,7 @@ from application.training_plan import (
     rename_training_plan,
     toggle_training_plan_status,
     reorder_plan_exercise,
+    find_training_plan_by_id,
 )
 
 from application.exercise import create_exercise, find_exercise_by_name
@@ -73,7 +74,11 @@ def input_int(prompt: str):
 
 
 def input_exercise_id(session: Session, prompt: str) -> int:
-    return find_exercise_by_name(session, input(prompt)).id
+    name = input(prompt)
+    exercise = find_exercise_by_name(session, name)
+    if exercise is None:
+        raise ValueError(f"Exercise '{name}' nicht gefunden")
+    return exercise.id
 
 
 def select_from_list(items, label_fn):
@@ -313,7 +318,8 @@ def training_plan_menu(session: Session, state: AppState):
                     max_duration_time=input_float("Max duration: "),
                     rest_sec=input_float("Rest: "),
                 )
-                plan = add_plan_exercise(session, state.current_plan_id, ex)
+                add_plan_exercise(session, state.current_plan_id, ex)
+                plan = find_training_plan_by_id(session, state.current_plan_id)
                 print_training_plan_detail(plan)
 
             elif c == "4":
