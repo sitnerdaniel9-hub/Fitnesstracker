@@ -93,14 +93,14 @@ def edit_workout(workout_id: int, payload: WorkoutCreateOrUpdate, db: Session = 
     return workout
 
 @router.put("/{workout_id}/workout_exercises/{workout_exercise_id}/sets/{set_id}", response_model=WorkoutReadDetailed)
-def edit_workout_set(workout_id: int, workout_exercise_id: int, workout_set_id: int, payload: WorkoutSetCreate, db: Session = Depends(get_db)):
+def edit_workout_set(workout_id: int, workout_exercise_id: int, set_id: int, payload: WorkoutSetCreate, db: Session = Depends(get_db)):
     workout_set_input = WorkoutSetInput(
         weight=payload.weight,
         reps=payload.reps,
         duration_time=payload.duration_time,
         is_warmup=payload.is_warmup,
     )
-    workout = update_workout_set(db, workout_id, workout_exercise_id, workout_set_id, workout_set_input)
+    workout = update_workout_set(db, workout_id, workout_exercise_id, set_id, workout_set_input)
     return workout
 
 @router.delete("", status_code=204)

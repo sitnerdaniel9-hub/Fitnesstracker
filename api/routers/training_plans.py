@@ -86,7 +86,7 @@ def create_plan_exercise(training_plan_id: int, payload: PlanExerciseInput, db: 
 def switch_active_status(training_plan_id: int, db: Session = Depends(get_db)):
     return toggle_training_plan_status(db, training_plan_id)
 
-@router.patch("/{training_plan_id}", response_model=TrainingPlanRead)
+@router.patch("/{training_plan_id}/rename", response_model=TrainingPlanRead)
 def edit_training_plan_name(training_plan_id: int, payload: TrainingPlanCreateOrUpdate, db: Session = Depends(get_db)):
     return rename_training_plan(db, training_plan_id, payload.name)
 
