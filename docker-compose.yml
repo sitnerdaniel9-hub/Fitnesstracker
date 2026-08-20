@@ -2,5 +2,5 @@ services:
   backend:
     build: .
     ports:
-      - "8000:8000"          # links = dein Rechner, rechts = im Container
+      - "8000:8000"
     command: sh -c "python seed.py && fastapi run api/main.py --host 0.0.0.0 --port 8000"
