@@ -1,8 +1,6 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-import models
 from models.base import Base
 
 

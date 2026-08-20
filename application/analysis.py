@@ -1,105 +1,8 @@
-from application.workout import get_workouts_by_date
-from application.workout import get_workouts
 from application.workout import get_workout
 from repository.workout_exercise_repository import WorkoutExerciseRepository
 from sqlalchemy.orm import Session
-from datetime import datetime
-from models.workout import Workout
 from models.workout_set import WorkoutSet
 from application.inputs.analysis_inputs import WeightData, RepData, TimeData
-
-def count_workouts_in_date_range(session: Session, start: datetime, end: datetime) -> int:
-    if start is None:
-            start = datetime.min
-    if end is None:
-        end = datetime.max
-    return len(get_workouts_by_date(session, start, end))    
-
-def _get_relevant_datetime(workout: Workout) -> datetime | None:
-    return workout.completed_at if workout.completed_at is not None else workout.started_at
-
-def _calc_avg(workout_count: int, start: datetime, end: datetime) -> float:
-    if workout_count == 0:
-        return 0.0
-
-    if start > end:
-        raise ValueError("start must be less than or equal to end")
-
-    days = (end.date() - start.date()).days + 1
-    weeks = days / 7.0
-
-    return workout_count / weeks
-
-
-def _count_avg_workouts_per_week_at_start(session: Session, start: datetime) -> float:
-    end = datetime.now()
-    workouts = get_workouts_by_date(session, start, end)
-    return _calc_avg(len(workouts), start, end)
-
-
-def _count_avg_workouts_per_week_to_end(session: Session, end: datetime) -> float:
-    workouts = get_workouts(session)
-    filtered_workouts: list[Workout] = []
-
-    for workout in workouts:
-        dt = _get_relevant_datetime(workout)
-        if dt is not None and dt < end:
-            filtered_workouts.append(workout)
-
-    if not filtered_workouts:
-        return 0.0
-
-    dates = [_get_relevant_datetime(workout) for workout in filtered_workouts]
-    dates = [dt for dt in dates if dt is not None]
-
-    start = min(dates)
-    return _calc_avg(len(filtered_workouts), start, end)
-
-
-def _count_avg_workouts_per_week_from_start_to_end(
-    session: Session,
-    start: datetime,
-    end: datetime,
-) -> float:
-    workouts = get_workouts_by_date(session, start, end)
-    return _calc_avg(len(workouts), start, end)
-
-
-def _count_avg_workouts_per_week_full_range(session: Session) -> float:
-    workouts = get_workouts(session)
-    if not workouts:
-        return 0.0
-
-    dates = [_get_relevant_datetime(workout) for workout in workouts]
-    dates = [dt for dt in dates if dt is not None]
-
-    if not dates:
-        return 0.0
-
-    start = min(dates)
-    end = max(dates)
-
-    return _calc_avg(len(workouts), start, end)
-
-
-def count_avg_workouts_per_week(
-    session: Session,
-    start: datetime | None = None,
-    end: datetime | None = None,
-) -> float:
-    if start is not None and end is not None and start > end:
-        raise ValueError("start must be less than or equal to end")
-
-    if start is not None and end is None:
-        return _count_avg_workouts_per_week_at_start(session, start)
-
-    if start is None and end is not None:
-        return _count_avg_workouts_per_week_to_end(session, end)
-
-    if start is not None and end is not None:
-        return _count_avg_workouts_per_week_from_start_to_end(session, start, end)
-
-    return _count_avg_workouts_per_week_full_range(session)
 
 #Liefert die Personal Best für eine Übung.
 #Bei Wiederholungsübungen: Das Set mit dem höchsten gewicht. Wenn es Sets mit dem gleichem Gewicht gibt, gewinnt das mit der höchsten Wiederholungsanzahl.
@@ -170,7 +73,7 @@ def get_plan_exercise_coverage_for_workout(session: Session, workout_id: int) ->
     logged_ids = {
         we.plan_exercise_id
         for we in workout.workout_exercises
-        if we.plan_exercise_id is not None
+        if we.plan_exercise_id is not None and len(we.sets) > 0
     }
     covered = sum(1 for pe in plan_exercises if pe.id in logged_ids)
     return covered, len(plan_exercises)

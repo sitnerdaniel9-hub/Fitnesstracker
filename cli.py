@@ -2,8 +2,6 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from application.analysis import (
-    count_workouts_in_date_range,
-    count_avg_workouts_per_week,
     get_pr_for_exercise,
     get_avg_weight_gain,
     get_avg_rep_increase,
@@ -26,7 +24,6 @@ from application.exercise import create_exercise, find_exercise_by_name
 from application.workout import (
     create_workout,
     get_workouts,
-    get_workout,
     remove_workout,
     end_workout,
     add_workout_exercise,
@@ -366,42 +363,28 @@ def training_plan_menu(session: Session, state: AppState):
 def analysis_menu(session: Session):
     while True:
         print("\n=== Analyse ===")
-        print("1 Count Workouts")
-        print("2 Avg/Woche")
-        print("3 PR")
-        print("4 Gewichtsentwicklung")
-        print("5 Rep Entwicklung")
-        print("6 Zeit Entwicklung")
+        print("1 PR")
+        print("2 Gewichtsentwicklung")
+        print("3 Rep Entwicklung")
+        print("4 Zeit Entwicklung")
         print("0 Zurück")
 
         c = input("Auswahl: ")
 
         try:
             if c == "1":
-                print(count_workouts_in_date_range(session,
-                    input_datetime("Start: "),
-                    input_datetime("End: ")
-                ))
-
-            elif c == "2":
-                print(count_avg_workouts_per_week(session,
-                    input_datetime("Start: "),
-                    input_datetime("End: ")
-                ))
-
-            elif c == "3":
                 print(get_pr_for_exercise(session, int(input("Exercise ID: "))))
 
-            elif c == "4":
+            elif c == "2":
                 print(get_avg_weight_gain(session, int(input("Exercise ID: "))))
 
-            elif c == "5":
+            elif c == "3":
                 print(get_avg_rep_increase(session,
                     int(input("Exercise ID: ")),
                     input_float("Weight: ")
                 ))
 
-            elif c == "6":
+            elif c == "4":
                 print(get_avg_time_increase(session,
                     int(input("Exercise ID: ")),
                     input_float("Weight: ")

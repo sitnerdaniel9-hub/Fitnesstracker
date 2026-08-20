@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Integer, ForeignKey, DateTime
+from sqlalchemy import String, DateTime
 from .base import Base
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

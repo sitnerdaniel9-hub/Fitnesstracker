@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from datetime import datetime
 from sqlalchemy.orm import Session
 
 from api.schemas.training_plan import TrainingPlanRead, PlanExerciseRead, TrainingPlanCreateOrUpdate, PlanExerciseUpdateOrCreate, PlanExerciseReorder
