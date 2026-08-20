@@ -1,0 +1,8 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:////app/fitness_tracker.db
+    command: sh -c "python seed.py && fastapi run api/main.py --host 0.0.0.0 --port 8000"
