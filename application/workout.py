@@ -10,7 +10,6 @@ from datetime import datetime
 from models.training_plan import TrainingPlan
 from models.workout import Workout
 from models.workout_exercise import WorkoutExercise
-from models.plan_exercise import PlanExercise
 from models.workout_set import WorkoutSet
 from sqlalchemy.orm import Session
 
@@ -117,18 +116,6 @@ def remove_workout(session: Session, workout_id: int) -> None:
         session.rollback()
         raise
 
-#Löscht alle Workouts nach, die in einem bestimmten Zeitraum durchgeführt wurden.
-def remove_workouts_by_date(session: Session, start : datetime, end: datetime) -> None:
-    repo = WorkoutRepository(session)
-    try:
-        workouts = repo.find_by_date(start, end)
-        for workout in workouts:
-            repo.delete(workout)
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-
 #Fügt eine WorkoutExercise zu einem Workout hinzu
 
 def add_workout_exercise(session: Session, workout_id: int, workout_exercise: WorkoutExerciseInput) -> Workout:
@@ -147,30 +134,6 @@ def add_workout_exercise(session: Session, workout_id: int, workout_exercise: Wo
             sets = new_sets,
         )
         workout.workout_exercises.append(new_workout_exercise)
-        session.commit()
-        return workout
-    except Exception:
-        session.rollback()
-        raise
-
-#Verändert eine WorkoutExercise in einem Workout
-
-def update_workout_exercise(session: Session, workout_id: int, workout_exercise_id: int, workout_exercise_input: WorkoutExerciseInput) -> Workout:
-    repo = WorkoutRepository(session)
-    try:
-        workout = repo.find_by_id(workout_id)
-        if workout is None:
-            raise ValueError(f"workout with id {workout_id} not found")
-        validate_plan_exercise_logic(workout, workout_exercise_input.plan_exercise_id)
-        workout_exercise = find_workout_exercise_for_workout_by_id(workout, workout_exercise_id)
-        if workout_exercise is None:
-            raise ValueError(f"WorkoutExercise with id {workout_exercise_id} not found")
-        workout_exercise.exercise_id = workout_exercise_input.exercise_id
-        workout_exercise.plan_exercise_id = workout_exercise_input.plan_exercise_id
-        new_sets : list[WorkoutSet] = []
-        for workout_set in workout_exercise_input.sets:
-            new_sets.append(to_workout_set(workout_set))
-        workout_exercise.sets = new_sets
         session.commit()
         return workout
     except Exception:

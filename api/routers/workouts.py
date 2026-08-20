@@ -3,7 +3,6 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from api.schemas.workout import WorkoutRead, WorkoutCreateOrUpdate, WorkoutReadDetailed, WorkoutExerciseCreate, WorkoutSetCreate, WorkoutFinish, WorkoutSetCreateFromPlan, CoverageRead
-from application import workout
 from application.inputs.workout_exercise_input import WorkoutExerciseInput
 from application.inputs.workout_set_input import WorkoutSetInput
 from db import get_db

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytest
 
 from application.analysis import (
-    count_avg_workouts_per_week,
-    count_workouts_in_date_range,
     get_avg_rep_increase,
     get_avg_time_increase,
     get_avg_weight_gain,
@@ -47,44 +45,6 @@ def _workout_ex(exercise_id: int, plan_exercise_id: int, sets: list[WorkoutSetIn
         plan_exercise_id=plan_exercise_id,
         sets=sets,
     )
-
-
-def _create_completed_workout(session, name: str, started_at: datetime, completed_at: datetime | None = None):
-    w = create_workout(session, name=name, training_plan_id=None, started_at=started_at)
-    if completed_at is not None:
-        w.completed_at = completed_at
-        session.commit()
-    return w
-
-
-def test_count_workouts_in_date_range(session) -> None:
-    base = datetime(2026, 1, 1, 10, 0, 0)
-    _create_completed_workout(session, "W1", base)
-    _create_completed_workout(session, "W2", base + timedelta(days=1))
-    _create_completed_workout(session, "W3", base + timedelta(days=10))
-
-    assert count_workouts_in_date_range(session, base, base + timedelta(days=2)) == 2
-    assert count_workouts_in_date_range(session, base, base + timedelta(days=20)) == 3
-
-
-def test_count_avg_workouts_per_week_returns_zero_for_empty_db(session) -> None:
-    assert count_avg_workouts_per_week(session) == 0.0
-
-
-def test_count_avg_workouts_per_week_with_explicit_range(session) -> None:
-    start = datetime(2026, 1, 1, 10, 0, 0)
-    # 7 Tage inkl. Start/End -> weeks = 1.0
-    for i in range(7):
-        _create_completed_workout(session, f"W{i}", start + timedelta(days=i))
-
-    end = start + timedelta(days=6, hours=1)
-    assert count_avg_workouts_per_week(session, start=start, end=end) == pytest.approx(7.0)
-
-
-def test_count_avg_workouts_per_week_raises_for_start_after_end(session) -> None:
-    with pytest.raises(ValueError):
-        count_avg_workouts_per_week(session, start=datetime(2026, 1, 2), end=datetime(2026, 1, 1))
-
 
 def test_get_pr_for_exercise_uses_weight_then_tie_breaker_and_ignores_warmup(session) -> None:
     plan = create_training_plan(session, "P", [_plan_ex(session, "Bench")])

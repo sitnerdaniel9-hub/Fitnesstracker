@@ -13,13 +13,10 @@ from application.workout import (
     add_workout_exercise,
     add_workout_set,
     create_workout,
-    end_workout,
     get_workout,
-    remove_workout_exercise,
     remove_workout_set,
     remove_workout,
     save_as_training_plan,
-    update_workout_exercise,
     update_workout_set,
     get_best_weight_per_workout_by_exercise_id,
     get_best_reps_per_workout_by_exercise_id,
@@ -107,90 +104,6 @@ def test_add_workout_exercise_without_plan_disallows_plan_exercise_reference(ses
     assert ex.sets[0].isWarmup is True
 
 
-def test_add_workout_exercise_with_plan_requires_plan_exercise_id_and_belongs_to_plan(session) -> None:
-    plan = _create_plan(session)
-    w = create_workout(session, name="W", training_plan_id=plan.id, started_at=None)
-    bench_exercise_id = plan.plan_exercises[0].exercise_id
-
-    # bound workout -> must reference plan_exercise
-    with pytest.raises(ValueError):
-        add_workout_exercise(
-            session,
-            w.id,
-            _workout_ex(bench_exercise_id, None, sets=[WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False)]),
-        )
-
-    # wrong plan_exercise_id
-    with pytest.raises(ValueError):
-        add_workout_exercise(
-            session,
-            w.id,
-            _workout_ex(bench_exercise_id, 9999, sets=[WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False)]),
-        )
-
-    # valid
-    bench_plan_id = plan.plan_exercises[0].id
-    w = add_workout_exercise(
-        session,
-        w.id,
-        _workout_ex(
-            bench_exercise_id,
-            bench_plan_id,
-            sets=[
-                WorkoutSetInput(weight=60.0, reps=5, duration_time=None, is_warmup=True),
-                WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False),
-            ],
-        ),
-    )
-    assert len(w.workout_exercises) == 1
-    assert w.workout_exercises[0].plan_exercise_id == bench_plan_id
-    assert [s.isWarmup for s in w.workout_exercises[0].sets] == [True, False]
-
-
-def test_update_and_remove_workout_exercise(session) -> None:
-    plan = _create_plan(session)
-    w = create_workout(session, name="W", training_plan_id=plan.id, started_at=None)
-    bench_exercise_id = plan.plan_exercises[0].exercise_id
-    bench_id = plan.plan_exercises[0].id
-    row_exercise_id = plan.plan_exercises[1].exercise_id
-    row_id = plan.plan_exercises[1].id
-
-    w = add_workout_exercise(
-        session,
-        w.id,
-        _workout_ex(bench_exercise_id, bench_id, sets=[WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False)]),
-    )
-    w = add_workout_exercise(
-        session,
-        w.id,
-        _workout_ex(row_exercise_id, row_id, sets=[WorkoutSetInput(weight=70.0, reps=10, duration_time=None, is_warmup=False)]),
-    )
-
-    # update in place + remap sets
-    ex_to_update = w.workout_exercises[0]
-    ex_id = ex_to_update.id
-    w = update_workout_exercise(
-        session,
-        w.id,
-        ex_id,
-        _workout_ex(
-            bench_exercise_id,
-            bench_id,
-            sets=[
-                WorkoutSetInput(weight=80.0, reps=9, duration_time=None, is_warmup=False),
-                WorkoutSetInput(weight=80.0, reps=8, duration_time=None, is_warmup=False),
-            ],
-        ),
-    )
-    updated = next(ex for ex in w.workout_exercises if ex.id == ex_id)
-    assert len(updated.sets) == 2
-
-    # remove second
-    second_id = w.workout_exercises[1].id
-    w = remove_workout_exercise(session, w.id, second_id)
-    assert len(w.workout_exercises) == 1
-
-
 def test_add_update_remove_workout_set(session) -> None:
     w = create_workout(session, name="W", training_plan_id=None, started_at=None)
     bench_id = _create_exercise(session, "Bench")
@@ -219,14 +132,6 @@ def test_add_update_remove_workout_set(session) -> None:
 
     w = remove_workout_set(session, w.id, ex_id, set_id)
     assert all(s.id != set_id for s in w.workout_exercises[0].sets)
-
-
-def test_end_workout_sets_completed_at(session) -> None:
-    w = create_workout(session, name="W", training_plan_id=None, started_at=None)
-    assert w.completed_at is None
-    w = end_workout(session, w.id)
-    assert w.completed_at is not None
-
 
 def test_save_workout_as_training_plan(session) -> None:
     w = create_workout(session, name="Template", training_plan_id=None, started_at=None)

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from application.inputs.workout_set_input import WorkoutSetInput
-from application.inputs.plan_exercise_input import PlanExerciseInput
 
 @dataclass(frozen=True)
 class WorkoutExerciseInput:
