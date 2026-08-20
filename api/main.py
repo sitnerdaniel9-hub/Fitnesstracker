@@ -2,9 +2,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
-
+from models.base import Base
+from db import engine
 from api.routers import exercises, training_plans, workouts
 
+Base.metadata.create_all(bind=engine)
 app = FastAPI()
 # TODO: in Produktion einschränken
 app.add_middleware(
