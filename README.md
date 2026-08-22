@@ -6,15 +6,31 @@ SQLite**, ausgeliefert über Docker.
 
 Dieses Repo enthält **nur das Backend**. Die dazugehörige App (React
 Native / Expo) liegt hier:
-👉 **[Fitnesstracker-Frontend](https://github.com/sitnerdaniel9-hub/Fitnesstracker-Frontend)**
+**[Fitnesstracker-Frontend](https://github.com/sitnerdaniel9-hub/Fitnesstracker-Frontend)**
 
 ---
 
-## 👉 Hier anfangen
+## Hier anfangen
 
 Das Backend ist der Einstiegspunkt. Starte es **zuerst** – die App zeigt ohne
 laufende API nichts an. Wenn das Backend läuft, geht es weiter im
 [Frontend-Repo](https://github.com/sitnerdaniel9-hub/Fitnesstracker-Frontend).
+
+---
+
+
+## Architektur
+
+Sauber geschichtet nach **Repository → Application → API**:
+
+- **Repository-Layer** – Datenzugriff (SQLAlchemy), keine Geschäftslogik.
+- **Application-Layer** – Geschäftslogik, Validierung, wirft `ValueError` bei
+  fachlichen Fehlern.
+- **API-Layer** – FastAPI-Router, dünn; globaler Exception-Handler übersetzt
+  `ValueError` → HTTP 400 und `SQLAlchemyError` → HTTP 500.
+
+CORS ist aktiviert, damit das Frontend im Web-Weg (Browser) die API
+cross-origin erreichen kann.
 
 ---
 
@@ -23,6 +39,11 @@ laufende API nichts an. Wenn das Backend läuft, geht es weiter im
 Es gibt ein eigenes Compose-File für das Review, das die API mit
 **vorgeneriertem Seed-Datensatz** startet – so ist sofort etwas zu sehen, ohne
 erst manuell Daten anzulegen.
+
+> **Hinweis zu den Daten:** Das Setup startet mit einem festen Testdatensatz.
+> Eigene Eingaben (geloggte Workouts, angelegte Übungen) sind während der
+> laufenden Sitzung normal nutzbar, werden beim Neustart des Containers aber
+> zurückgesetzt – jeder Start beginnt wieder mit dem Standard-Testset.
 
 ### 1. Repo klonen
 
@@ -82,28 +103,13 @@ Grobe Struktur:
 
 ---
 
-## Stoppen / neu aufsetzen
+## Stoppen
 
 Backend stoppen:
 
 ```bash
 docker compose -f docker-compose.reviewer.yml down
 ```
-
----
-
-## Architektur (Kurzüberblick)
-
-Sauber geschichtet nach **Repository → Application → API**:
-
-- **Repository-Layer** – Datenzugriff (SQLAlchemy), keine Geschäftslogik.
-- **Application-Layer** – Geschäftslogik, Validierung, wirft `ValueError` bei
-  fachlichen Fehlern.
-- **API-Layer** – FastAPI-Router, dünn; globaler Exception-Handler übersetzt
-  `ValueError` → HTTP 400 und `SQLAlchemyError` → HTTP 500.
-
-CORS ist aktiviert, damit das Frontend im Web-Weg (Browser) die API
-cross-origin erreichen kann.
 
 ---
 
