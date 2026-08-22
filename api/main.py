@@ -8,7 +8,7 @@ from api.routers import exercises, training_plans, workouts
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
-# TODO: in Produktion einschränken
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
